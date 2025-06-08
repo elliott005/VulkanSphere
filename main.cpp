@@ -21,14 +21,13 @@ int main() {
 
     Application app;
 
-    
     std::vector<Image*> images;
     
     try {
         app.startup("shaders/defaultShader.vert", "shaders/defaultShader.frag");
-        Image img0;
+        /* Image img0;
         app.createTextureImage("assets/sprite_000.png", &img0);
-        images.push_back(&img0);
+        images.push_back(&img0); */
         VkBuffer vertexBuffer; VkDeviceMemory vertexBufferMemory;
         VkBuffer indexBuffer; VkDeviceMemory indexBufferMemory;
         app.createVertexBuffer(vertices, vertexBuffer, vertexBufferMemory);
