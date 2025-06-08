@@ -22,12 +22,166 @@ void Planet::fibonacciSphere(int samples) {
         float x = cos(theta) * radius;
         float z = sin(theta) * radius;
 
-        this->vertices.push_back({{x * this->size, y * this->size, z * this->size}, {1.0f, 0.0f, 0.0f}});
-        unsigned short j = i;
-        if (i > 1) {
-            this->indices.push_back(j - 2);
-            this->indices.push_back(j - 1);
-            this->indices.push_back(j);
+        this->points.push_back({x * this->size, y * this->size, z * this->size});
+    }
+
+    this->bowyer_watson();
+}
+
+void Planet::bowyer_watson() {
+    std::vector<Triangle> triangulation;
+    //printf("%i\n", glm::vec3(-this->size * 2, 0, this->size * 2).length());
+    Triangle superTriangle = Triangle(glm::vec3(-this->size * 2, 0, this->size * 2), glm::vec3(0, 0, -this->size * 2), glm::vec3(this->size * 2, 0, this->size * 2));
+    triangulation.push_back(superTriangle);
+    for (glm::vec3 point : this->points) {
+        std::vector<Triangle> badTriangles = {};
+        for (Triangle triangle : triangulation) {
+            if (triangle.pointIsInside(point)) {
+                //printf("aaaa\n");
+                badTriangles.push_back(triangle);
+            }
+        }
+        //printf("%i\n", badTriangles.size());
+        std::vector<Edge> polygon = {};
+        for (Triangle triangle : badTriangles) {
+            for (int i = 0; i < 3; i++) {
+                if (not isEdgeShared(triangle.edges[i], triangle, badTriangles)) {
+                    polygon.push_back(triangle.edges[i]);
+                }
+            }
+        }
+        for (const Triangle& triangle : badTriangles) {
+            triangulation.erase(std::remove(triangulation.begin(), triangulation.end(), triangle), triangulation.end());
+        }
+        for (Edge edge : polygon) {
+            Triangle newTri(edge.points[0], edge.points[1], point);
+            // Compute normal
+            glm::vec3 normal = glm::normalize(glm::cross(
+                newTri.points[1] - newTri.points[0],
+                newTri.points[2] - newTri.points[0]
+            ));
+            glm::vec3 centroid = (newTri.points[0] + newTri.points[1] + newTri.points[2]) / 3.0f;
+            // If normal points inward, swap two vertices to flip winding
+            if (glm::dot(normal, centroid) < 0.0f) {
+                std::swap(newTri.points[1], newTri.points[2]);
+                // Also update edges if needed
+                newTri.edges[0] = Edge(newTri.points[0], newTri.points[1]);
+                newTri.edges[1] = Edge(newTri.points[1], newTri.points[2]);
+                newTri.edges[2] = Edge(newTri.points[2], newTri.points[0]);
+            }
+            triangulation.push_back(newTri);
         }
     }
+
+    printf("Triangles: %i\n", triangulation.size());
+    
+    auto isSuperTriangleVertex = [&](const glm::vec3& v) {
+        return v == superTriangle.points[0] ||
+            v == superTriangle.points[1] ||
+            v == superTriangle.points[2];
+    };
+
+    triangulation.erase(
+        std::remove_if(triangulation.begin(), triangulation.end(),
+            [&](const Triangle& tri) {
+                return isSuperTriangleVertex(tri.points[0]) ||
+                    isSuperTriangleVertex(tri.points[1]) ||
+                    isSuperTriangleVertex(tri.points[2]);
+            }),
+        triangulation.end()
+    );
+
+    auto isDegenerate = [](const Triangle& tri) {
+        return tri.points[0] == tri.points[1] ||
+            tri.points[1] == tri.points[2] ||
+            tri.points[2] == tri.points[0];
+    };
+
+    for (const Triangle& triangle : triangulation) {
+        if (isDegenerate(triangle)) continue;
+        glm::vec3 normal = glm::normalize(glm::cross(triangle.points[1] - triangle.points[0], triangle.points[2] - triangle.points[0]));
+        glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.0f) + normal * 0.5f;
+        for (glm::vec3 point : triangle.points) {
+            this->indices.push_back(this->vertices.size());
+            this->vertices.push_back({{point.x * this->size + this->position.x, point.y * this->size + this->position.y, point.z * this->size + this->position.z}, {color.x, color.y, color.z}});
+        }
+    }
+}
+
+Triangle::Triangle(glm::vec3 point1, glm::vec3 point2, glm::vec3 point3) {
+    this->points[0] = point1;
+    this->points[1] = point2;
+    this->points[2] = point3;
+    this->center = glm::vec3((point1.x + point2.x + point3.x) / 3, (point1.y + point2.y + point3.y) / 3, (point1.z + point2.z + point3.z) / 3);
+    //printf("%f, %f, %f, %f\n", glm::length(this->center), glm::length(point1), glm::length(point2), glm::length(point3));
+    for (int i = 0; i < 3; i++) {
+        float dist = glm::distance(this->points[i], this->center);
+        if (dist > this->size) {
+            this->size = dist;
+        }
+    }
+    //printf("Size: %f\n", this->size);
+    this->edges[0] = Edge(point1, point2);
+    this->edges[1] = Edge(point2, point3);
+    this->edges[2] = Edge(point3, point1);
+}
+
+bool Triangle::pointIsInside(glm::vec3 point) {
+    /* printf("Point: %f, %f, %f\n", point.x, point.y, point.z);
+    printf("Center: %f, %f, %f\n", this->center.x, this->center.y, this->center.z);
+    printf("Size: %f\n", this->size);
+    printf("Distance: %f\n", glm::distance(point, this->center)); */
+    // Compute the circumcenter and radius
+    glm::vec3 a = points[0];
+    glm::vec3 b = points[1];
+    glm::vec3 c = points[2];
+
+    glm::vec3 ab = b - a;
+    glm::vec3 ac = c - a;
+    glm::vec3 abXac = glm::cross(ab, ac);
+
+    float denominator = 2.0f * glm::dot(abXac, abXac);
+    if (denominator == 0.0f) return false; // Degenerate triangle
+
+    glm::vec3 toCircumcenter =
+        (glm::cross(abXac, ab) * glm::dot(ac, ac) +
+         glm::cross(ac, abXac) * glm::dot(ab, ab)) / denominator;
+
+    glm::vec3 circumcenter = a + toCircumcenter;
+    float radius = glm::length(toCircumcenter);
+
+    return glm::length(point - circumcenter) <= radius + 1e-6f;
+}
+
+Edge::Edge(glm::vec3 point1, glm::vec3 point2) {
+    this->points[0] = point1;
+    this->points[1] = point2;
+}
+
+Edge::Edge() {
+    this->points[0] = glm::vec3(0, 0, 0);
+    this->points[1] = glm::vec3(0, 0, 0);
+}
+
+bool areEdgesEqual(const Edge& edge1, const Edge& edge2) {
+    return (edge1.points[0] == edge2.points[0] && edge1.points[1] == edge2.points[1]) ||
+           (edge1.points[0] == edge2.points[1] && edge1.points[1] == edge2.points[0]);
+}
+
+bool operator==(const Triangle& triangle1, const Triangle& triangle2) {
+    return triangle1.points[0] == triangle2.points[0] and triangle1.points[1] == triangle2.points[1] and triangle1.points[2] == triangle2.points[2];
+}
+
+bool isEdgeShared(Edge edge, const Triangle& current, std::vector<Triangle> triangles) {
+    for (Triangle triangle : triangles) {
+        if (triangle == current) {
+            continue; // Skip the current triangle
+        }
+        for (int i = 0; i < 3; i++) {
+            if (areEdgesEqual(edge, triangle.edges[i])) {
+                return true;
+            }
+        }
+    }
+    return false;
 }

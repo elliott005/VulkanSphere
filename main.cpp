@@ -1,5 +1,6 @@
 //#include "src/Application.hpp"
 #include "src/Player.hpp"
+#include "src/Planet.hpp"
 
 int main() {
     const std::vector<Vertex> vertices = {
@@ -21,6 +22,8 @@ int main() {
 
     Application app;
 
+    Planet planet(glm::vec3(3.0f, -2.0, -10.0), 2.0f);
+
     std::vector<Image*> images;
     
     try {
@@ -30,8 +33,8 @@ int main() {
         images.push_back(&img0); */
         VkBuffer vertexBuffer; VkDeviceMemory vertexBufferMemory;
         VkBuffer indexBuffer; VkDeviceMemory indexBufferMemory;
-        app.createVertexBuffer(vertices, vertexBuffer, vertexBufferMemory);
-        app.createIndexBuffer(indices, indexBuffer, indexBufferMemory);
+        app.createVertexBuffer(planet.vertices, vertexBuffer, vertexBufferMemory);
+        app.createIndexBuffer(planet.indices, indexBuffer, indexBufferMemory);
         app.createUniformBuffers();
         app.initImages(images);
         
@@ -53,7 +56,7 @@ int main() {
             player.update(deltaTime, app.window);
             UniformBufferObject ubo = player.updateUBO();
 
-            app.updateScreen(vertexBuffer, indexBuffer, indices, ubo);
+            app.updateScreen(vertexBuffer, indexBuffer, planet.indices, ubo);
             glfwPollEvents();
         }
         
