@@ -5,7 +5,7 @@ Player::Player(glm::vec<3, float, (glm::qualifier)0> pos, VkExtent2D swapChainEx
 
     this->worldUp = glm::vec3(0, 1, 0);
 
-	this->projection = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
+	this->projection = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 1000.0f);
 
     GLdouble xPos, yPos;
 	glfwGetCursorPos(window, &xPos, &yPos);
