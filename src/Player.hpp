@@ -33,5 +33,5 @@ private:
     float lastMouseX = 0.0f;
 	float lastMouseY = 0.0f;
 	float mouseSensitivity = 0.1;
-	float maxVerticalRotation = 70.0;
+	float maxVerticalRotation = 89.0;
 };

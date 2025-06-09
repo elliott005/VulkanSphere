@@ -3,14 +3,15 @@
 Planet::Planet(glm::vec3 pos, float size) {
     this->position = pos;
     this->size = size;
-    this->fibonacciSphere(100);
+    this->fibonacciSphere();
+    this->bowyer_watson();
 }
 
 Planet::~Planet() {
 
 }
 
-void Planet::fibonacciSphere(int samples) {
+void Planet::fibonacciSphere() {
     float phi = M_PI * (sqrt(5.0f) - 1.0f);  // golden angle in radians
 
     for (int i = 0; i < samples; i++) {
@@ -22,18 +23,22 @@ void Planet::fibonacciSphere(int samples) {
         float x = cos(theta) * radius;
         float z = sin(theta) * radius;
 
-        this->points.push_back({x * this->size, y * this->size, z * this->size});
+        this->points.push_back({x, y, z});
     }
 
-    this->bowyer_watson();
+    /* auto rng = std::default_random_engine {};
+    std::shuffle(std::begin(this->points), std::end(this->points), rng); */
+    //std::reverse(this->points.begin(), this->points.end());
 }
 
 void Planet::bowyer_watson() {
     std::vector<Triangle> triangulation;
     //printf("%i\n", glm::vec3(-this->size * 2, 0, this->size * 2).length());
-    Triangle superTriangle = Triangle(glm::vec3(-this->size * 2, 0, this->size * 2), glm::vec3(0, 0, -this->size * 2), glm::vec3(this->size * 2, 0, this->size * 2));
+    int n = M_PI;
+    Triangle superTriangle = Triangle(glm::vec3(-n, 0, n), glm::vec3(0, 0, -n), glm::vec3(n, 0, n));
     triangulation.push_back(superTriangle);
     for (glm::vec3 point : this->points) {
+        //printf("Point: %f, %f, %f\n", point.x, point.y, point.z);
         std::vector<Triangle> badTriangles = {};
         for (Triangle triangle : triangulation) {
             if (triangle.pointIsInside(point)) {
@@ -62,13 +67,13 @@ void Planet::bowyer_watson() {
             ));
             glm::vec3 centroid = (newTri.points[0] + newTri.points[1] + newTri.points[2]) / 3.0f;
             // If normal points inward, swap two vertices to flip winding
-            if (glm::dot(normal, centroid) < 0.0f) {
+            /* if (glm::dot(normal, centroid) > 0.0f) {
                 std::swap(newTri.points[1], newTri.points[2]);
                 // Also update edges if needed
                 newTri.edges[0] = Edge(newTri.points[0], newTri.points[1]);
                 newTri.edges[1] = Edge(newTri.points[1], newTri.points[2]);
                 newTri.edges[2] = Edge(newTri.points[2], newTri.points[0]);
-            }
+            } */
             triangulation.push_back(newTri);
         }
     }
@@ -114,12 +119,6 @@ Triangle::Triangle(glm::vec3 point1, glm::vec3 point2, glm::vec3 point3) {
     this->points[2] = point3;
     this->center = glm::vec3((point1.x + point2.x + point3.x) / 3, (point1.y + point2.y + point3.y) / 3, (point1.z + point2.z + point3.z) / 3);
     //printf("%f, %f, %f, %f\n", glm::length(this->center), glm::length(point1), glm::length(point2), glm::length(point3));
-    for (int i = 0; i < 3; i++) {
-        float dist = glm::distance(this->points[i], this->center);
-        if (dist > this->size) {
-            this->size = dist;
-        }
-    }
     //printf("Size: %f\n", this->size);
     this->edges[0] = Edge(point1, point2);
     this->edges[1] = Edge(point2, point3);
@@ -136,6 +135,18 @@ bool Triangle::pointIsInside(glm::vec3 point) {
     glm::vec3 b = points[1];
     glm::vec3 c = points[2];
 
+    /* glm::vec3 ab = b - a;
+    glm::vec3 ac = c - a;
+    glm::vec3 abXac = glm::cross(ab, ac);
+
+    glm::vec3 toCircumsphereCenter = (glm::cross( abXac, ab ) * glm::length(ac) * glm::length(ac) + glm::cross( ac, abXac ) * glm::length(ab) * glm::length(ab)) / (2.f * glm::length(abXac) * glm::length(abXac)) ;
+
+    float circumsphereRadius = glm::length(toCircumsphereCenter);
+
+    glm::vec3 ccs = a + toCircumsphereCenter;
+
+    return glm::length(point - ccs) <= circumsphereRadius; */
+
     glm::vec3 ab = b - a;
     glm::vec3 ac = c - a;
     glm::vec3 abXac = glm::cross(ab, ac);
@@ -148,9 +159,16 @@ bool Triangle::pointIsInside(glm::vec3 point) {
          glm::cross(ac, abXac) * glm::dot(ab, ab)) / denominator;
 
     glm::vec3 circumcenter = a + toCircumcenter;
+    /* if (sign(center.y) != sign(point.y)) {
+        printf("{(%f, %f, %f), (%f, %f, %f)}", circumcenter.x, circumcenter.y, circumcenter.z, point.x, point.y, point.z);
+    } */
     float radius = glm::length(toCircumcenter);
 
-    return glm::length(point - circumcenter) <= radius + 1e-6f;
+    bool isInsideCircumcircle = glm::length(point - circumcenter) <= radius;
+    /* if (sign(center.y) != sign(point.y)) {
+        printf("(%i, %i), ", sign(point.y), isInsideCircumcircle); // Point is not in the same hemisphere as the triangle
+    } */
+    return isInsideCircumcircle;
 }
 
 Edge::Edge(glm::vec3 point1, glm::vec3 point2) {
@@ -184,4 +202,8 @@ bool isEdgeShared(Edge edge, const Triangle& current, std::vector<Triangle> tria
         }
     }
     return false;
+}
+
+int sign(float value) {
+    return (value > 0) - (value < 0);
 }
