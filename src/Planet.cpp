@@ -11,7 +11,7 @@ Planet::~Planet() {
 }
 
 void Planet::icosahedron() {
-    std::vector<Triangle> triangles = {
+    std::vector<Triangle> startTriangles = {
         {glm::vec3(-1, 0, -1), glm::vec3(1, 0, -1), glm::vec3(0, 1, 0)},  // top front
         {glm::vec3(-1, 0, -1), glm::vec3(-1, 0, 1), glm::vec3(0, 1, 0)},  // top left
         {glm::vec3(1, 0, 1),   glm::vec3(-1, 0, 1), glm::vec3(0, 1, 0)},  // top back
@@ -22,7 +22,49 @@ void Planet::icosahedron() {
         {glm::vec3(1, 0, 1),   glm::vec3(1, 0, -1), glm::vec3(0, -1, 0)}, // bottom right
     };
 
-    for (int i = 0; i < 5; i++) {
+    std::vector<Triangle> triangles;
+    int num = 10;
+    for (Triangle& triangle : startTriangles) {
+        glm::vec3 start_v0 = triangle.points[0];
+        glm::vec3 v0 = start_v0;
+        glm::vec3 v = start_v0;
+        glm::vec3 start_v1 = triangle.points[1];
+        glm::vec3 start_v2 = triangle.points[2];
+        for (int i = 0; i < num + 1; i++) {
+            glm::vec3 v1 = start_v0 + 1.0f / (num + 1) * (i + 1) * (start_v1 - start_v0);
+            glm::vec3 v2 = start_v0 + 1.0f / (num + 1) * (i + 1) * (start_v2 - start_v0);;
+            int numTri = i * 2 + 1;
+            for (int j = 0; j < numTri; j++) {
+                if (j % 2 == 0) {
+                    glm::vec3 v3;
+                    if (i == 0) {
+                        v3 = start_v0;
+                    } else {
+                        v3 = glm::normalize(v0 + 1.0f / float(i) * float(j / 2) * (v - v0));
+                    }
+                    glm::vec3 v4 = glm::normalize(v1 + 1.0f / float(i + 1) * float(j / 2) * (v2 - v1));
+                    glm::vec3 v5 = glm::normalize(v1 + 1.0f / float(i + 1) * float(j / 2 + 1) * (v2 - v1));
+    
+                    triangles.push_back({v3, v4, v5});
+                } else {
+                    glm::vec3 v3;
+                    if (i == 0) {
+                        v3 = start_v0;
+                    } else {
+                        v3 = glm::normalize(v0 + 1.0f / float(i) * float(j / 2) * (v - v0));
+                    }
+                    glm::vec3 v4 = glm::normalize(v1 + 1.0f / float(i + 1) * float(j / 2 + 1) * (v2 - v1));
+                    glm::vec3 v5 = glm::normalize(v0 + 1.0f / float(i) * float(j / 2 + 1) * (v - v0));
+    
+                    triangles.push_back({v3, v4, v5});
+                }
+            }
+            v0 = v1;
+            v = v2;
+        }
+    }
+
+    /* for (int i = 0; i < 5; i++) {
         std::vector<Triangle> outputTriangles;
         for (Triangle& triangle : triangles) {
             glm::vec3 v0 = triangle.points[0];
@@ -37,7 +79,7 @@ void Planet::icosahedron() {
             outputTriangles.push_back({v3, v4, v5});
         }
         triangles = outputTriangles;
-    }
+    } */
 
     for (Triangle& triangle : triangles) {
         for (int i = 0; i < 3; i++) {
