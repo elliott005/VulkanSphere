@@ -56,7 +56,7 @@ void Planet::bowyer_watson() {
         std::vector<Edge> polygon = {};
         for (Triangle triangle : badTriangles) {
             for (int i = 0; i < 3; i++) {
-                if (not isEdgeShared(triangle.edges[i], triangle, badTriangles)) {
+                if (!isEdgeShared(triangle.edges[i], triangle, badTriangles)) {
                     polygon.push_back(triangle.edges[i]);
                 }
             }
@@ -211,7 +211,7 @@ bool areEdgesEqual(const Edge& edge1, const Edge& edge2) {
 }
 
 bool operator==(const Triangle& triangle1, const Triangle& triangle2) {
-    return triangle1.points[0] == triangle2.points[0] and triangle1.points[1] == triangle2.points[1] and triangle1.points[2] == triangle2.points[2];
+    return (triangle1.points[0] == triangle2.points[0] && triangle1.points[1] == triangle2.points[1] && triangle1.points[2] == triangle2.points[2]);
 }
 
 bool isEdgeShared(Edge edge, const Triangle& current, std::vector<Triangle> triangles) {

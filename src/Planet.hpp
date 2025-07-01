@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Application.hpp"
-#define _USE_MATH_DEFINES
-#include <cmath>
 #include <random>
+
+#define M_PI 3.14159265359
 
 class Edge {
     public:

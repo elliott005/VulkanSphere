@@ -27,7 +27,7 @@ int main() {
     std::vector<Image*> images;
     
     try {
-        app.startup("shaders/defaultShader.vert", "shaders/defaultShader.frag");
+        app.startup("compiledShaders/vert.spv", "compiledShaders/frag.spv");
         /* Image img0;
         app.createTextureImage("assets/sprite_000.png", &img0);
         images.push_back(&img0); */
