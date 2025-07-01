@@ -23,7 +23,7 @@ void Planet::icosahedron() {
     };
 
     std::vector<Triangle> triangles;
-    int num = 10;
+    int num = 50;
     for (Triangle& triangle : startTriangles) {
         glm::vec3 start_v0 = triangle.points[0];
         glm::vec3 v0 = start_v0;
@@ -64,34 +64,57 @@ void Planet::icosahedron() {
         }
     }
 
-    /* for (int i = 0; i < 5; i++) {
-        std::vector<Triangle> outputTriangles;
-        for (Triangle& triangle : triangles) {
-            glm::vec3 v0 = triangle.points[0];
-            glm::vec3 v1 = triangle.points[1];
-            glm::vec3 v2 = triangle.points[2];
-            glm::vec3 v3 = glm::normalize(0.5f * (v0 + v1));
-            glm::vec3 v4 = glm::normalize(0.5f * (v1 + v2));
-            glm::vec3 v5 = glm::normalize(0.5f * (v2 + v0));
-            outputTriangles.push_back({v0, v3, v5});
-            outputTriangles.push_back({v3, v1, v4});
-            outputTriangles.push_back({v4, v2, v5});
-            outputTriangles.push_back({v3, v4, v5});
-        }
-        triangles = outputTriangles;
-    } */
+    printf("num triangles: %i\n", triangles.size());
 
-    for (Triangle& triangle : triangles) {
-        for (int i = 0; i < 3; i++) {
-            triangle.points[i] = glm::normalize(triangle.points[i]) * this->size;
+    if (true) {
+        for (Triangle& triangle : triangles) {
+            int points[3] = {-1, -1, -1};
+            int idx = 0;
+            for (glm::vec3& point : this->points) {
+                for (int i = 0; i < 3; i++) {
+                    if (point == triangle.points[i]) {
+                        points[i] = idx;
+                    }
+                }
+                idx++;
+            }
+            glm::vec3 normalizedPoints[3];
+            for (int i = 0; i < 3; i++) {
+                normalizedPoints[i] = glm::normalize(triangle.points[i]);
+            }
+
+            //glm::vec3 normal = glm::normalize(glm::cross(normalizedPoints[1] - normalizedPoints[0], normalizedPoints[2] - normalizedPoints[0]));
+            //glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.0f) + normal * 0.5f;
+            
+            for (int i = 0; i < 3; i++) {
+                if (points[i] == -1) {
+                    this->indices.push_back(this->points.size());
+                    this->points.push_back(triangle.points[i]);
+                    triangle.points[i] = normalizedPoints[i] * this->size;
+                    glm::vec3 point = triangle.points[i];
+                    glm::vec3 color{point.x / 2.0f + 0.5f, point.y / 2.0f + 0.5f, point.z / 2.0f + 0.5f};
+                    this->vertices.push_back({{point.x * this->size + this->position.x, point.y * this->size + this->position.y, point.z * this->size + this->position.z}, {color.x, color.y, color.z}});
+                } else {
+                    this->indices.push_back(points[i]);
+                }
+            }
         }
-        glm::vec3 normal = glm::normalize(glm::cross(triangle.points[1] - triangle.points[0], triangle.points[2] - triangle.points[0]));
-        glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.0f) + normal * 0.5f;
-        for (glm::vec3 point : triangle.points) {
-            this->indices.push_back(this->vertices.size());
-            this->vertices.push_back({{point.x * this->size + this->position.x, point.y * this->size + this->position.y, point.z * this->size + this->position.z}, {color.x, color.y, color.z}});
+    } else {
+        for (Triangle& triangle : triangles) {
+            for (int i = 0; i < 3; i++) {
+                triangle.points[i] = glm::normalize(triangle.points[i]) * this->size;
+            }
+            glm::vec3 normal = glm::normalize(glm::cross(triangle.points[1] - triangle.points[0], triangle.points[2] - triangle.points[0]));
+            glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.0f) + normal * 0.5f;
+            for (glm::vec3 point : triangle.points) {
+                this->indices.push_back(this->vertices.size());
+                this->vertices.push_back({{point.x * this->size + this->position.x, point.y * this->size + this->position.y, point.z * this->size + this->position.z}, {color.x, color.y, color.z}});
+            }
         }
     }
+
+
+    printf("vertices: %i\n", this->vertices.size());
 }
 
 void Planet::fibonacciSphere() {
