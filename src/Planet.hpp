@@ -42,6 +42,8 @@ private:
     int samples = 100;
     glm::vec3 color{0.5f, 0.5f, 0.0f};
 
+    void icosahedron();
+
     void fibonacciSphere();
     void bowyer_watson();
 };

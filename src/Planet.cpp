@@ -3,12 +3,53 @@
 Planet::Planet(glm::vec3 pos, float size) {
     this->position = pos;
     this->size = size;
-    this->fibonacciSphere();
-    this->bowyer_watson();
+    this->icosahedron();
 }
 
 Planet::~Planet() {
 
+}
+
+void Planet::icosahedron() {
+    std::vector<Triangle> triangles = {
+        {glm::vec3(-1, 0, -1), glm::vec3(1, 0, -1), glm::vec3(0, 1, 0)},  // top front
+        {glm::vec3(-1, 0, -1), glm::vec3(-1, 0, 1), glm::vec3(0, 1, 0)},  // top left
+        {glm::vec3(1, 0, 1),   glm::vec3(-1, 0, 1), glm::vec3(0, 1, 0)},  // top back
+        {glm::vec3(1, 0, 1),   glm::vec3(1, 0, -1), glm::vec3(0, 1, 0)},  // top right
+        {glm::vec3(-1, 0, -1), glm::vec3(1, 0, -1), glm::vec3(0, -1, 0)}, // bottom front
+        {glm::vec3(-1, 0, -1), glm::vec3(-1, 0, 1), glm::vec3(0, -1, 0)}, // bottom left
+        {glm::vec3(1, 0, 1),   glm::vec3(-1, 0, 1), glm::vec3(0, -1, 0)}, // bottom back
+        {glm::vec3(1, 0, 1),   glm::vec3(1, 0, -1), glm::vec3(0, -1, 0)}, // bottom right
+    };
+
+    for (int i = 0; i < 5; i++) {
+        std::vector<Triangle> outputTriangles;
+        for (Triangle& triangle : triangles) {
+            glm::vec3 v0 = triangle.points[0];
+            glm::vec3 v1 = triangle.points[1];
+            glm::vec3 v2 = triangle.points[2];
+            glm::vec3 v3 = glm::normalize(0.5f * (v0 + v1));
+            glm::vec3 v4 = glm::normalize(0.5f * (v1 + v2));
+            glm::vec3 v5 = glm::normalize(0.5f * (v2 + v0));
+            outputTriangles.push_back({v0, v3, v5});
+            outputTriangles.push_back({v3, v1, v4});
+            outputTriangles.push_back({v4, v2, v5});
+            outputTriangles.push_back({v3, v4, v5});
+        }
+        triangles = outputTriangles;
+    }
+
+    for (Triangle& triangle : triangles) {
+        for (int i = 0; i < 3; i++) {
+            triangle.points[i] = glm::normalize(triangle.points[i]) * this->size;
+        }
+        glm::vec3 normal = glm::normalize(glm::cross(triangle.points[1] - triangle.points[0], triangle.points[2] - triangle.points[0]));
+        glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.0f) + normal * 0.5f;
+        for (glm::vec3 point : triangle.points) {
+            this->indices.push_back(this->vertices.size());
+            this->vertices.push_back({{point.x * this->size + this->position.x, point.y * this->size + this->position.y, point.z * this->size + this->position.z}, {color.x, color.y, color.z}});
+        }
+    }
 }
 
 void Planet::fibonacciSphere() {
