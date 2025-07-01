@@ -23,7 +23,10 @@ void Planet::fibonacciSphere() {
         float x = cos(theta) * radius;
         float z = sin(theta) * radius;
 
-        this->points.push_back({x, y, z});
+        glm::vec3 newPoint = glm::vec3(x, y, z);
+
+
+        this->points.push_back(newPoint);
     }
 
     /* auto rng = std::default_random_engine {};
@@ -34,9 +37,12 @@ void Planet::fibonacciSphere() {
 void Planet::bowyer_watson() {
     std::vector<Triangle> triangulation;
     //printf("%i\n", glm::vec3(-this->size * 2, 0, this->size * 2).length());
-    int n = M_PI;
+    int n = M_PI * 2;
     Triangle superTriangle = Triangle(glm::vec3(-n, 0, n), glm::vec3(0, 0, -n), glm::vec3(n, 0, n));
     triangulation.push_back(superTriangle);
+
+    int count = 0;
+
     for (glm::vec3 point : this->points) {
         //printf("Point: %f, %f, %f\n", point.x, point.y, point.z);
         std::vector<Triangle> badTriangles = {};
@@ -61,13 +67,13 @@ void Planet::bowyer_watson() {
         for (Edge edge : polygon) {
             Triangle newTri(edge.points[0], edge.points[1], point);
             // Compute normal
-            glm::vec3 normal = glm::normalize(glm::cross(
+            /* glm::vec3 normal = glm::normalize(glm::cross(
                 newTri.points[1] - newTri.points[0],
                 newTri.points[2] - newTri.points[0]
             ));
             glm::vec3 centroid = (newTri.points[0] + newTri.points[1] + newTri.points[2]) / 3.0f;
             // If normal points inward, swap two vertices to flip winding
-            /* if (glm::dot(normal, centroid) > 0.0f) {
+            if (glm::dot(normal, centroid) > 0.0f) {
                 std::swap(newTri.points[1], newTri.points[2]);
                 // Also update edges if needed
                 newTri.edges[0] = Edge(newTri.points[0], newTri.points[1]);
@@ -75,10 +81,12 @@ void Planet::bowyer_watson() {
                 newTri.edges[2] = Edge(newTri.points[2], newTri.points[0]);
             } */
             triangulation.push_back(newTri);
+            count++;
         }
     }
 
     printf("Triangles: %i\n", triangulation.size());
+    printf("count: %i\n", count);
     
     auto isSuperTriangleVertex = [&](const glm::vec3& v) {
         return v == superTriangle.points[0] ||
@@ -153,20 +161,36 @@ bool Triangle::pointIsInside(glm::vec3 point) {
 
     float denominator = 2.0f * glm::dot(abXac, abXac);
     if (denominator == 0.0f) return false; // Degenerate triangle
+    
+    glm::vec3 normal = glm::normalize(abXac);
+    // Check if the point is in the same hemisphere as the triangle
+    /* if (glm::dot(normal, point - a) < 0.0f) {
+        // Point is not in the same hemisphere as the triangle
+        return false;
+    } */
 
-    glm::vec3 toCircumcenter =
+   
+   glm::vec3 toCircumcenter =
         (glm::cross(abXac, ab) * glm::dot(ac, ac) +
          glm::cross(ac, abXac) * glm::dot(ab, ab)) / denominator;
-
+         
     glm::vec3 circumcenter = a + toCircumcenter;
-    /* if (sign(center.y) != sign(point.y)) {
-        printf("{(%f, %f, %f), (%f, %f, %f)}", circumcenter.x, circumcenter.y, circumcenter.z, point.x, point.y, point.z);
-    } */
+    
     float radius = glm::length(toCircumcenter);
 
-    bool isInsideCircumcircle = glm::length(point - circumcenter) <= radius;
     /* if (sign(center.y) != sign(point.y)) {
-        printf("(%i, %i), ", sign(point.y), isInsideCircumcircle); // Point is not in the same hemisphere as the triangle
+        printf("{(%f, %f, %f), (%f, %f, %f), %f}; ", circumcenter.x, circumcenter.y, circumcenter.z, point.x, point.y, point.z, radius);
+    } */
+    
+   if (sign(point.y) != sign(abXac.y)) {
+       // Point is not in the same hemisphere as the triangle
+       //printf("{(%f, %f, %f), (%f, %f, %f), %f}; ", circumcenter.x, circumcenter.y, circumcenter.z, point.x, point.y, point.z, radius);
+       return false;
+   }
+   bool isInsideCircumcircle = glm::length(point - circumcenter) <= radius + 0.0001f; // Adding a small epsilon to account for floating point precision issues
+    /* if (sign(center.y) != sign(point.y)) {
+        //printf("(%i, %i), ", sign(point.y), isInsideCircumcircle); // Point is not in the same hemisphere as the triangle
+        return false; // Point is not in the same hemisphere as the triangle
     } */
     return isInsideCircumcircle;
 }
