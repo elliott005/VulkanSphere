@@ -24,7 +24,7 @@ int main() {
     app.startup("compiledShaders/vert.spv", "compiledShaders/frag.spv");
 
     float planetStart = static_cast<float>(glfwGetTime());
-    Planet planet(glm::vec3(3.0f, -2.0, -10.0), 10.0f);
+    Planet planet(glm::vec3(3.0f, -2.0, -10.0), 5.0f);
     float planetEnd = static_cast<float>(glfwGetTime());
     printf("planet startup time: %f\n", planetEnd - planetStart);
 
@@ -55,6 +55,8 @@ int main() {
             float currentFrame = static_cast<float>(glfwGetTime());
             float deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
+
+            //printf("FPS: %f\n", 1.0f / deltaTime);
 
             player.update(deltaTime, app.window);
             UniformBufferObject ubo = player.updateUBO();

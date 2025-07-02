@@ -23,13 +23,15 @@ public:
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
 
-    std::unordered_set<glm::vec3> points;
-    std::unordered_map<glm::vec3, int> pointsIndexes;
+    std::unordered_set<glm::vec3> uniquePoints;
+    std::unordered_map<glm::vec3, glm::vec3> transformedPoints;
 private:
-    int num_samples = 100;
+    int num_samples = 5;
     glm::vec3 color{0.5f, 0.5f, 0.0f};
 
     void icosahedron();
+
+    glm::vec3 transformPoint(glm::vec3 point);
 };
 
 int sign(float value);

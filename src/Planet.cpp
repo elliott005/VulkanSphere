@@ -67,51 +67,31 @@ void Planet::icosahedron() {
 
     printf("num triangles: %i\n", triangles.size());
 
-    if (true) {
-        for (Triangle& triangle : triangles) {
-            int points[3] = {-1, -1, -1};
-            for (int i = 0; i < 3; i++) {
-                auto it = this->points.find(triangle.points[i]);
-                if (it != this->points.end()) {
-                    points[i] = this->pointsIndexes[triangle.points[i]];
-                } else {
-                    this->pointsIndexes[triangle.points[i]] = this->pointsIndexes.size();
-                }
-                //printf("%i\n", points[i]);
+    for (Triangle& triangle : triangles) {            
+        glm::vec3 v0 = glm::normalize(triangle.points[0]);
+        glm::vec3 v1 = glm::normalize(triangle.points[1]);
+        glm::vec3 v2 = glm::normalize(triangle.points[2]);
+        glm::vec3 normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+        glm::vec3 color = glm::abs(normal);
+
+        for (int i = 0; i < 3; i++) {
+            auto it = this->uniquePoints.find(triangle.points[i]);
+            if (it == this->uniquePoints.end()) {
+                this->uniquePoints.insert(triangle.points[i]);
+                this->transformedPoints[triangle.points[i]] = this->transformPoint(triangle.points[i]);
             }
-            glm::vec3 normalizedPoints[3];
-            for (int i = 0; i < 3; i++) {
-                normalizedPoints[i] = glm::normalize(triangle.points[i]);
-            }
-            
-            for (int i = 0; i < 3; i++) {
-                if (points[i] == -1) {
-                    this->indices.push_back(this->vertices.size());
-                    this->points.insert(triangle.points[i]);
-                    triangle.points[i] = normalizedPoints[i];
-                    glm::vec3 point = triangle.points[i];
-                    glm::vec3 color{point.x / 2.0f + 0.5f, point.y / 2.0f + 0.5f, point.z / 2.0f + 0.5f};
-                    this->vertices.push_back({{point.x * this->size + this->position.x, point.y * this->size + this->position.y, point.z * this->size + this->position.z}, {color.x, color.y, color.z}});
-                } else {
-                    this->indices.push_back(points[i]);
-                }
-            }
-        }
-    } else {
-        for (Triangle& triangle : triangles) {
-            for (int i = 0; i < 3; i++) {
-                triangle.points[i] = glm::normalize(triangle.points[i]) * this->size;
-            }
-            glm::vec3 normal = glm::normalize(glm::cross(triangle.points[1] - triangle.points[0], triangle.points[2] - triangle.points[0]));
-            glm::vec3 color = glm::vec3(0.5f, 0.5f, 0.0f) + normal * 0.5f;
-            for (glm::vec3 point : triangle.points) {
-                this->indices.push_back(this->vertices.size());
-                this->vertices.push_back({{point.x * this->size + this->position.x, point.y * this->size + this->position.y, point.z * this->size + this->position.z}, {color.x, color.y, color.z}});
-            }
+            glm::vec3 point = this->transformedPoints[triangle.points[i]];
+            this->indices.push_back(this->vertices.size());
+            this->vertices.push_back({point, color});
+            //printf("%i\n", points[i]);
         }
     }
 
     printf("vertices: %i\n", this->vertices.size());
+}
+
+glm::vec3 Planet::transformPoint(glm::vec3 point) {
+    return glm::normalize(point) * this->size * (static_cast<float>(rand()) / RAND_MAX / 2 + 1) + this->position;
 }
 
 Triangle::Triangle(glm::vec3 point1, glm::vec3 point2, glm::vec3 point3) {
