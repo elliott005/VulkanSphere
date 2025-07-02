@@ -29,6 +29,17 @@ int main() {
     printf("planet startup time: %f\n", planetEnd - planetStart);
 
     std::vector<Image*> images;
+
+    IMGUI_CHECKVERSION();
+    app.init_imgui();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsLight();
+
     
     try {
         /* Image img0;
@@ -43,14 +54,50 @@ int main() {
         
         Player player{glm::vec3(0.0f, 0.0f, 0.0f), app.swapChainExtent, app.window};
         
-        glfwSetInputMode(app.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+        //glfwSetInputMode(app.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        
         float lastFrame = 0.0;
+        
+        bool toolWindowOpen = true;
 
+        bool leftPressed = false;
+        bool rightPressed = false;
+        
+        
         while (!glfwWindowShouldClose(app.window)) {
             if (glfwGetKey(app.window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
                 glfwSetWindowShouldClose(app.window, true);
 		    }
+
+            ImGui_ImplVulkan_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            ImGui::Begin("planet tool", &toolWindowOpen, ImGuiWindowFlags_MenuBar);
+                int v = planet.num_samples;
+                if (glfwGetKey(app.window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+                    if (!leftPressed)
+                        v = std::max(0, v - 1);
+                    leftPressed = true;
+                } else {
+                    leftPressed = false;
+                }
+                if (glfwGetKey(app.window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+                    if (!rightPressed)
+                        v = std::min(100, v + 1);
+                    rightPressed = true;
+                } else {
+                    rightPressed = false;
+                }
+                ImGui::SliderInt("num samples", &v, 0, 100);
+                if (v != planet.num_samples) {
+                    planet.num_samples = v;
+                    planet.icosahedron();
+                    app.updateVertexBuffer(vertexBuffer, planet.vertices);
+                    app.updateIndexBuffer(indexBuffer, planet.indices);
+                }
+            ImGui::End();
+            ImGui::Render();
+            
             
             float currentFrame = static_cast<float>(glfwGetTime());
             float deltaTime = currentFrame - lastFrame;
@@ -64,15 +111,19 @@ int main() {
             app.updateScreen(vertexBuffer, indexBuffer, planet.indices, ubo);
             glfwPollEvents();
         }
+
         
         vkDeviceWaitIdle(app.device);
+        
+        app.destroy_imgui();
         
         for (Image* image : images) {
             app.destroyImage(image);
         }
         app.destroyBuffers(vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory);
         app.close();
-
+        
+        
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;

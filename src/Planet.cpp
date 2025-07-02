@@ -12,7 +12,15 @@ Planet::~Planet() {
 }
 
 void Planet::icosahedron() {
-    int s = 1;
+    this->indices.clear();
+    this->vertices.clear();
+    
+    this->noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    this->noise.SetFrequency(0.4f);
+    this->noise.SetFractalType(FastNoiseLite::FractalType_Ridged);
+    this->noise.SetSeed(static_cast<unsigned int>(time(nullptr)));
+
+    int s = 1000;
     std::vector<Triangle> startTriangles = {
         {glm::vec3(-s, 0, -s), glm::vec3(s, 0, -s), glm::vec3(0, s, 0)},  // top front
         {glm::vec3(-s, 0, -s), glm::vec3(-s, 0, s), glm::vec3(0, s, 0)},  // top left
@@ -67,14 +75,18 @@ void Planet::icosahedron() {
 
     printf("num triangles: %i\n", triangles.size());
 
-    for (Triangle& triangle : triangles) {            
-        glm::vec3 v0 = glm::normalize(triangle.points[0]);
-        glm::vec3 v1 = glm::normalize(triangle.points[1]);
-        glm::vec3 v2 = glm::normalize(triangle.points[2]);
+    //int count = 0;
+    for (Triangle& triangle : triangles) {
+        glm::vec3 v0 = this->transformPoint(triangle.points[0]);
+        glm::vec3 v1 = this->transformPoint(triangle.points[1]);
+        glm::vec3 v2 = this->transformPoint(triangle.points[2]);
         glm::vec3 normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
         glm::vec3 color = glm::abs(normal);
 
         for (int i = 0; i < 3; i++) {
+            /* if (count > 40300) {
+                printf("point %i: %f, %f, %f\n", i, triangle.points[i].x, triangle.points[i].y, triangle.points[i].z);
+            } */
             auto it = this->uniquePoints.find(triangle.points[i]);
             if (it == this->uniquePoints.end()) {
                 this->uniquePoints.insert(triangle.points[i]);
@@ -85,13 +97,19 @@ void Planet::icosahedron() {
             this->vertices.push_back({point, color});
             //printf("%i\n", points[i]);
         }
+        //count++;
     }
 
     printf("vertices: %i\n", this->vertices.size());
 }
 
 glm::vec3 Planet::transformPoint(glm::vec3 point) {
-    return glm::normalize(point) * this->size * (static_cast<float>(rand()) / RAND_MAX / 2 + 1) + this->position;
+    float noiseValue = this->noise.GetNoise(point.x + 10.0f, point.y + 10.0f, point.z + 10.0f);
+    noiseValue = (noiseValue + 1.0f) / 2.0f; // Normalize to [0, 1]
+    noiseValue *= 7.0f; // Scale to [0, 10]
+    //noiseValue /= 2.0f; // Scale to [0, 0.5]
+    //noiseValue = noiseValue * 0.5f + 1.0f;
+    return this->position + glm::normalize(point) * this->size;// + glm::normalize(point) * noiseValue;// * (static_cast<float>(rand()) / RAND_MAX / 2 + 1);
 }
 
 Triangle::Triangle(glm::vec3 point1, glm::vec3 point2, glm::vec3 point3) {

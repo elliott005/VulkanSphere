@@ -11,6 +11,10 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+
 #include "stb_image.h"
 
 #include <iostream>
@@ -27,8 +31,19 @@
 #include <optional>
 #include <set>
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+#define VK_CHECK(x)                                                 \
+	do                                                              \
+	{                                                               \
+		VkResult err = x;                                           \
+		if (err)                                                    \
+		{                                                           \
+			std::cout <<"Detected Vulkan error: " << err << std::endl; \
+			abort();                                                \
+		}                                                           \
+	} while (0)
+
+const uint32_t WIDTH = 1500;
+const uint32_t HEIGHT = 1000;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -192,7 +207,8 @@ public:
             memcpy(data, vertices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
-        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+        VkDeviceSize bufferBiggerSize = sizeof(vertices[0]) * 1000000 * 3;
+        createBuffer(bufferBiggerSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 
         copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
@@ -212,7 +228,8 @@ public:
             memcpy(data, indices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
-        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+        VkDeviceSize bufferBiggerSize = sizeof(indices[0]) * 1000000 * 3;
+        createBuffer(bufferBiggerSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
 
         copyBuffer(stagingBuffer, indexBuffer, bufferSize);
 
@@ -242,48 +259,152 @@ public:
         vkFreeMemory(device, vertexBufferMemory, nullptr);
     }
 
-private:
+    void updateVertexBuffer(VkBuffer& buffer, std::vector<Vertex> vertices) {
+        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+            memcpy(data, vertices.data(), (size_t) bufferSize);
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        copyBuffer(stagingBuffer, buffer, bufferSize);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }
+
+    void updateIndexBuffer(VkBuffer& buffer, std::vector<uint16_t> indices) {
+        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+            memcpy(data, indices.data(), (size_t) bufferSize);
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        copyBuffer(stagingBuffer, buffer, bufferSize);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }
+
+    void init_imgui()
+    {
+        //1: create descriptor pool for IMGUI
+        // the size of the pool is very oversize, but it's copied from imgui demo itself.
+        VkDescriptorPoolSize pool_sizes[] =
+        {
+            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+        };
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_info.maxSets = 1000;
+        pool_info.poolSizeCount = std::size(pool_sizes);
+        pool_info.pPoolSizes = pool_sizes;
+
+        VK_CHECK(vkCreateDescriptorPool(device, &pool_info, nullptr, &imguiPool));
+
+
+        // 2: initialize imgui library
+
+        //this initializes the core structures of imgui
+        ImGui::CreateContext();
+
+        //this initializes imgui for GLFW
+        ImGui_ImplGlfw_InitForVulkan(window, true);
+
+        //this initializes imgui for Vulkan
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance = instance;
+        init_info.PhysicalDevice = physicalDevice;
+        init_info.Device = device;
+        init_info.Queue = graphicsQueue;
+        init_info.DescriptorPool = imguiPool;
+        init_info.RenderPass = renderPass;
+        init_info.MinImageCount = 3;
+        init_info.ImageCount = 3;
+        init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+        ImGui_ImplVulkan_Init(&init_info);
+
+        //execute a gpu command to upload imgui font textures
+        /* immediate_submit([&](VkCommandBuffer cmd) {
+            ImGui_ImplVulkan_CreateFontsTexture(cmd);
+            }); */
+
+        //clear font textures from cpu data
+        //ImGui_ImplVulkan_DestroyFontUploadObjects();
+    }
+
+    void destroy_imgui() {
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+        vkDestroyDescriptorPool(device, imguiPool, nullptr);
+    }
+
 
     VkInstance instance;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkQueue graphicsQueue;
+    VkQueue presentQueue;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkSurfaceKHR surface;
 
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
-
+    VkDescriptorPool imguiPool;
+    
+    
+    
     VkSwapchainKHR swapChain;
     std::vector<VkImage> swapChainImages;
     VkFormat swapChainImageFormat;
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
-
+    
     VkRenderPass renderPass;
     VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
-
+    
     VkCommandPool commandPool;
-
+    
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void*> uniformBuffersMapped;
-
+    
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
-
+    
     std::vector<VkCommandBuffer> commandBuffers;
-
+    
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
-
+    
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
-
+private:
     bool framebufferResized = false;
 
     void initWindow() {
@@ -1235,6 +1356,8 @@ private:
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
         vkCmdEndRenderPass(commandBuffer);
 

@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Application.hpp"
+#include "FastNoiseLite.h"
 #include <random>
 #include <unordered_set>
 #include <unordered_map>
+#include <time.h>
 
 class Triangle {
 public:
@@ -25,11 +27,14 @@ public:
 
     std::unordered_set<glm::vec3> uniquePoints;
     std::unordered_map<glm::vec3, glm::vec3> transformedPoints;
+    
+    int num_samples = 70; // 81608 triangles for 100 samples
+    void icosahedron();
 private:
-    int num_samples = 5;
+    FastNoiseLite noise;
+
     glm::vec3 color{0.5f, 0.5f, 0.0f};
 
-    void icosahedron();
 
     glm::vec3 transformPoint(glm::vec3 point);
 };
