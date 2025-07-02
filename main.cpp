@@ -21,13 +21,16 @@ int main() {
     };
 
     Application app;
+    app.startup("compiledShaders/vert.spv", "compiledShaders/frag.spv");
 
-    Planet planet(glm::vec3(3.0f, -2.0, -10.0), 2.0f);
+    float planetStart = static_cast<float>(glfwGetTime());
+    Planet planet(glm::vec3(3.0f, -2.0, -10.0), 10.0f);
+    float planetEnd = static_cast<float>(glfwGetTime());
+    printf("planet startup time: %f\n", planetEnd - planetStart);
 
     std::vector<Image*> images;
     
     try {
-        app.startup("compiledShaders/vert.spv", "compiledShaders/frag.spv");
         /* Image img0;
         app.createTextureImage("assets/sprite_000.png", &img0);
         images.push_back(&img0); */
