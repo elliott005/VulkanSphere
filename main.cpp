@@ -3,7 +3,7 @@
 #include "src/Planet.hpp"
 
 int main() {
-    const std::vector<Vertex> vertices = {
+    /* const std::vector<Vertex> vertices = {
         {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
         {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
         {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
@@ -18,13 +18,13 @@ int main() {
     const std::vector<uint16_t> indices = {
         0, 1, 2, 2, 3, 0,
         4, 7, 6, 6, 5, 4,
-    };
+    }; */
 
     Application app;
     app.startup("compiledShaders/vert.spv", "compiledShaders/frag.spv");
 
     float planetStart = static_cast<float>(glfwGetTime());
-    Planet planet(glm::vec3(3.0f, -2.0, -10.0), 5.0f);
+    Planet planet(glm::vec3(0.0f, 0.0, -10.0), 5.0f);
     float planetEnd = static_cast<float>(glfwGetTime());
     printf("planet startup time: %f\n", planetEnd - planetStart);
 

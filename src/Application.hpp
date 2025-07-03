@@ -135,7 +135,7 @@ public:
         initWindow();
         initVulkan(vertexShader, fragmentShader);
     }
-    void updateScreen(VkBuffer& vertexBuffer, VkBuffer& indexBuffer, std::vector<uint16_t> indices, UniformBufferObject ubo) {
+    void updateScreen(VkBuffer& vertexBuffer, VkBuffer& indexBuffer, std::vector<uint32_t> indices, UniformBufferObject ubo) {
         drawFrame(vertexBuffer, indexBuffer, indices, ubo);
     }
     void close() {
@@ -197,6 +197,7 @@ public:
 
     void createVertexBuffer(std::vector<Vertex> vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory) {
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+        printf("%i, %i\n", sizeof(vertices[0]) * vertices.size(), vertices.size());
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -207,7 +208,7 @@ public:
             memcpy(data, vertices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
-        VkDeviceSize bufferBiggerSize = sizeof(vertices[0]) * 1000000 * 3;
+        VkDeviceSize bufferBiggerSize = sizeof(vertices[0]) * 200000 * 3;
         createBuffer(bufferBiggerSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 
         copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
@@ -216,7 +217,7 @@ public:
         vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
 
-    void createIndexBuffer(std::vector<uint16_t> indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory) {
+    void createIndexBuffer(std::vector<uint32_t> indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory) {
         VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
         VkBuffer stagingBuffer;
@@ -277,7 +278,7 @@ public:
         vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
 
-    void updateIndexBuffer(VkBuffer& buffer, std::vector<uint16_t> indices) {
+    void updateIndexBuffer(VkBuffer& buffer, std::vector<uint32_t> indices) {
         VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
         VkBuffer stagingBuffer;
@@ -1307,7 +1308,7 @@ private:
         }
     }
 
-    void recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t imageIndex, VkBuffer& vertexBuffer, VkBuffer& indexBuffer, std::vector<uint16_t> indices) {
+    void recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t imageIndex, VkBuffer& vertexBuffer, VkBuffer& indexBuffer, std::vector<uint32_t> indices) {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -1351,7 +1352,7 @@ private:
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-            vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+            vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
@@ -1391,7 +1392,7 @@ private:
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
-    void drawFrame(VkBuffer& vertexBuffer, VkBuffer& indexBuffer, std::vector<uint16_t> indices, UniformBufferObject ubo) {
+    void drawFrame(VkBuffer& vertexBuffer, VkBuffer& indexBuffer, std::vector<uint32_t> indices, UniformBufferObject ubo) {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;

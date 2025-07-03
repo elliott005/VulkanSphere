@@ -23,12 +23,12 @@ public:
     float size;
 
     std::vector<Vertex> vertices;
-    std::vector<uint16_t> indices;
+    std::vector<uint32_t> indices;
 
     std::unordered_set<glm::vec3> uniquePoints;
     std::unordered_map<glm::vec3, glm::vec3> transformedPoints;
     
-    int num_samples = 70; // 81608 triangles for 100 samples
+    int num_samples = 60; // 81608 triangles for 100 samples
     void icosahedron();
 private:
     FastNoiseLite noise;
