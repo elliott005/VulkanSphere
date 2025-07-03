@@ -197,7 +197,6 @@ public:
 
     void createVertexBuffer(std::vector<Vertex> vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory) {
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-        printf("%i, %i\n", sizeof(vertices[0]) * vertices.size(), vertices.size());
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -208,7 +207,7 @@ public:
             memcpy(data, vertices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
-        VkDeviceSize bufferBiggerSize = sizeof(vertices[0]) * 200000 * 3;
+        VkDeviceSize bufferBiggerSize = sizeof(vertices[0]) * 500000 * 3;
         createBuffer(bufferBiggerSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 
         copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
@@ -229,7 +228,7 @@ public:
             memcpy(data, indices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
-        VkDeviceSize bufferBiggerSize = sizeof(indices[0]) * 1000000 * 3;
+        VkDeviceSize bufferBiggerSize = sizeof(indices[0]) * 500000 * 3;
         createBuffer(bufferBiggerSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
 
         copyBuffer(stagingBuffer, indexBuffer, bufferSize);

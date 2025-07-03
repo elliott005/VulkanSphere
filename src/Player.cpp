@@ -52,8 +52,12 @@ void Player::handleCamera(GLFWwindow* window) {
 	float yOffset = lastMousePos.y - yPos;
 	lastMousePos.x = xPos;
 	lastMousePos.y = yPos;
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		return;
+	} else {
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
 	rotation.y += xOffset * mouseSensitivity;
 	rotation.x += yOffset * mouseSensitivity;
 	rotation.x = std::min(maxVerticalRotation, std::max(-maxVerticalRotation, rotation.x));

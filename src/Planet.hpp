@@ -28,12 +28,18 @@ public:
     std::unordered_set<glm::vec3> uniquePoints;
     std::unordered_map<glm::vec3, glm::vec3> transformedPoints;
     
-    int num_samples = 60; // 81608 triangles for 100 samples
+    int num_samples = 1; // 81608 triangles for 100 samples
+    bool use_random_colors = false;
+    bool use_noise = true;
+    float noise_frequency = 0.3;
+    float noise_strength = 5.0f;
+    glm::vec3 base_color{0.0f, 0.5f, 0.9f};
+    FastNoiseLite::NoiseType noise_type = FastNoiseLite::NoiseType_OpenSimplex2;
+
     void icosahedron();
 private:
     FastNoiseLite noise;
 
-    glm::vec3 color{0.5f, 0.5f, 0.0f};
 
 
     glm::vec3 transformPoint(glm::vec3 point);

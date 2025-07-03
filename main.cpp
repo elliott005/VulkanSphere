@@ -35,12 +35,14 @@ int main() {
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    ImFont* defaultFont = io.Fonts->AddFontFromFileTTF("assets/DroidSans.ttf");
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsLight();
 
-    
+    static const char* enumNoiseType[] = { "OpenSimplex2", "OpenSimplex2S", "Cellular", "Perlin", "Value Cubic", "Value" };
+
     try {
         /* Image img0;
         app.createTextureImage("assets/sprite_000.png", &img0);
@@ -54,12 +56,10 @@ int main() {
         
         Player player{glm::vec3(0.0f, 0.0f, 0.0f), app.swapChainExtent, app.window};
         
-        //glfwSetInputMode(app.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(app.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         
         float lastFrame = 0.0;
         
-        bool toolWindowOpen = true;
-
         bool leftPressed = false;
         bool rightPressed = false;
         
@@ -68,42 +68,70 @@ int main() {
             if (glfwGetKey(app.window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
                 glfwSetWindowShouldClose(app.window, true);
 		    }
-
-            ImGui_ImplVulkan_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-            ImGui::Begin("planet tool", &toolWindowOpen, ImGuiWindowFlags_MenuBar);
-                int v = planet.num_samples;
-                if (glfwGetKey(app.window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-                    if (!leftPressed)
-                        v = std::max(0, v - 1);
-                    leftPressed = true;
-                } else {
-                    leftPressed = false;
-                }
-                if (glfwGetKey(app.window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-                    if (!rightPressed)
-                        v = std::min(100, v + 1);
-                    rightPressed = true;
-                } else {
-                    rightPressed = false;
-                }
-                ImGui::SliderInt("num samples", &v, 0, 100);
-                if (v != planet.num_samples) {
-                    planet.num_samples = v;
-                    planet.icosahedron();
-                    app.updateVertexBuffer(vertexBuffer, planet.vertices);
-                    app.updateIndexBuffer(indexBuffer, planet.indices);
-                }
-            ImGui::End();
-            ImGui::Render();
-            
             
             float currentFrame = static_cast<float>(glfwGetTime());
             float deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
 
             //printf("FPS: %f\n", 1.0f / deltaTime);
+
+            ImGui_ImplVulkan_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            ImGui::PushFont(defaultFont, 26.0f);
+            ImGui::Begin("planet tool", nullptr, ImGuiWindowFlags_MenuBar);
+                int num_samples = planet.num_samples;
+                if (glfwGetKey(app.window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+                    if (!leftPressed)
+                        num_samples = std::max(0, num_samples - 1);
+                    leftPressed = true;
+                } else {
+                    leftPressed = false;
+                }
+                if (glfwGetKey(app.window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+                    if (!rightPressed)
+                        num_samples = std::min(100, num_samples + 1);
+                    rightPressed = true;
+                } else {
+                    rightPressed = false;
+                }
+                ImGui::SliderInt("num samples", &num_samples, 0, 100);
+                float size = planet.size;
+                ImGui::SliderFloat("size", &size, 1.0f, 20.0f);
+                bool use_random_colors = planet.use_random_colors;
+                ImGui::Checkbox("use random colors", &use_random_colors);
+                glm::vec3 base_color = planet.base_color;
+                ImGui::ColorEdit3("base color", &base_color.x);
+                bool use_noise = planet.use_noise;
+                ImGui::Checkbox("use noise", &use_noise);
+                float noise_frequency = planet.noise_frequency;
+                ImGui::SliderFloat("noise frequency", &noise_frequency, 0.01f, 2.0f);
+                float noise_strength = planet.noise_strength;
+                ImGui::SliderFloat("noise strength", &noise_strength, 0.0, 10.0);
+                int noise_type_int = (int)planet.noise_type;
+                ImGui::Combo("noise type", &noise_type_int, enumNoiseType, IM_ARRAYSIZE(enumNoiseType));
+                FastNoiseLite::NoiseType noise_type = (FastNoiseLite::NoiseType)noise_type_int;
+                if (noise_strength != planet.noise_strength || noise_type != planet.noise_type || base_color != planet.base_color || num_samples != planet.num_samples || use_noise != planet.use_noise || size != planet.size || noise_frequency != planet.noise_frequency || use_random_colors != planet.use_random_colors) {
+                    planet.size = size;
+                    planet.num_samples = num_samples;
+                    planet.base_color = base_color;
+                    planet.use_noise = use_noise;
+                    planet.noise_strength = noise_strength;
+                    planet.noise_type = noise_type;
+                    planet.noise_frequency = noise_frequency;
+                    planet.use_random_colors = use_random_colors;
+                    planet.icosahedron();
+                    app.updateVertexBuffer(vertexBuffer, planet.vertices);
+                    app.updateIndexBuffer(indexBuffer, planet.indices);
+                }
+            ImGui::End();
+            ImGui::Begin("stats", nullptr);
+                ImGui::Text("FPS: %i", int(std::round(1.0f / deltaTime)));
+            ImGui::End();
+            ImGui::PopFont();
+            ImGui::Render();
+            
+            
 
             player.update(deltaTime, app.window);
             UniformBufferObject ubo = player.updateUBO();

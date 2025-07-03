@@ -17,24 +17,66 @@ void Planet::icosahedron() {
     this->uniquePoints.clear();
     this->transformedPoints.clear();
 
-    this->noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    this->noise.SetFrequency(0.25f);
+    this->noise.SetNoiseType(this->noise_type);
+    this->noise.SetFrequency(this->noise_frequency);
     this->noise.SetFractalType(FastNoiseLite::FractalType_FBm);
     this->noise.SetSeed(static_cast<unsigned int>(time(nullptr)));
 
     printf("num samples: %i\n", this->num_samples);
 
-    int s = 1;
-    std::vector<Triangle> startTriangles = {
-        {glm::vec3(-s, 0, -s), glm::vec3(s, 0, -s), glm::vec3(0, s, 0)},  // top front
-        {glm::vec3(-s, 0, -s), glm::vec3(-s, 0, s), glm::vec3(0, s, 0)},  // top left
-        {glm::vec3(s, 0, s),   glm::vec3(-s, 0, s), glm::vec3(0, s, 0)},  // top back
-        {glm::vec3(s, 0, s),   glm::vec3(s, 0, -s), glm::vec3(0, s, 0)},  // top right
-        {glm::vec3(-s, 0, -s), glm::vec3(s, 0, -s), glm::vec3(0, -s, 0)}, // bottom front
-        {glm::vec3(-s, 0, -s), glm::vec3(-s, 0, s), glm::vec3(0, -s, 0)}, // bottom left
-        {glm::vec3(s, 0, s),   glm::vec3(-s, 0, s), glm::vec3(0, -s, 0)}, // bottom back
-        {glm::vec3(s, 0, s),   glm::vec3(s, 0, -s), glm::vec3(0, -s, 0)}, // bottom right
+    const float t = (1.0f + sqrt(5.0f)) / 2.0f;
+
+    // 12 unique, normalized vertices
+    std::vector<glm::vec3> verts = {
+        glm::normalize(glm::vec3(-1,  t,  0)),
+        glm::normalize(glm::vec3( 1,  t,  0)),
+        glm::normalize(glm::vec3(-1, -t,  0)),
+        glm::normalize(glm::vec3( 1, -t,  0)),
+        glm::normalize(glm::vec3( 0, -1,  t)),
+        glm::normalize(glm::vec3( 0,  1,  t)),
+        glm::normalize(glm::vec3( 0, -1, -t)),
+        glm::normalize(glm::vec3( 0,  1, -t)),
+        glm::normalize(glm::vec3( t,  0, -1)),
+        glm::normalize(glm::vec3( t,  0,  1)),
+        glm::normalize(glm::vec3(-t,  0, -1)),
+        glm::normalize(glm::vec3(-t,  0,  1))
     };
+
+    // 20 triangles, each referencing the above vertices by index
+    std::vector<Triangle> startTriangles = {
+        {verts[0], verts[11], verts[5]},
+        {verts[0], verts[5], verts[1]},
+        {verts[0], verts[1], verts[7]},
+        {verts[0], verts[7], verts[10]},
+        {verts[0], verts[10], verts[11]},
+        {verts[1], verts[5], verts[9]},
+        {verts[5], verts[11], verts[4]},
+        {verts[11], verts[10], verts[2]},
+        {verts[10], verts[7], verts[6]},
+        {verts[7], verts[1], verts[8]},
+        {verts[3], verts[9], verts[4]},
+        {verts[3], verts[4], verts[2]},
+        {verts[3], verts[2], verts[6]},
+        {verts[3], verts[6], verts[8]},
+        {verts[3], verts[8], verts[9]},
+        {verts[4], verts[9], verts[5]},
+        {verts[2], verts[4], verts[11]},
+        {verts[6], verts[2], verts[10]},
+        {verts[8], verts[6], verts[7]},
+        {verts[9], verts[8], verts[1]}
+    };
+
+    /* int s = 1;
+    std::vector<Triangle> startTriangles = {
+        {glm::vec3(s, 0, -s),  glm::vec3(0, s, 0),   glm::vec3(-s, 0, -s)},  // top front
+        {glm::vec3(-s, 0, s),  glm::vec3(-s, 0, -s), glm::vec3(0, s, 0)},  // top left
+        {glm::vec3(-s, 0, s),  glm::vec3(0, s, 0),   glm::vec3(s, 0, s)},  // top back
+        {glm::vec3(s, 0, -s),  glm::vec3(s, 0, s),   glm::vec3(0, s, 0)},  // top right
+        {glm::vec3(-s, 0, -s), glm::vec3(0, -s, 0),  glm::vec3(s, 0, -s)}, // bottom front
+        {glm::vec3(-s, 0, -s), glm::vec3(-s, 0, s),  glm::vec3(0, -s, 0)}, // bottom left
+        {glm::vec3(s, 0, s),   glm::vec3(0, -s, 0),  glm::vec3(-s, 0, s)}, // bottom back
+        {glm::vec3(s, 0, s),   glm::vec3(s, 0, -s),  glm::vec3(0, -s, 0)}, // bottom right
+    }; */
 
     std::vector<Triangle> triangles;
     for (Triangle& triangle : startTriangles) {
@@ -88,12 +130,6 @@ void Planet::icosahedron() {
 
     //int count = 0;
     for (Triangle& triangle : triangles) {
-        glm::vec3 v0 = this->transformPoint(triangle.points[0]);
-        glm::vec3 v1 = this->transformPoint(triangle.points[1]);
-        glm::vec3 v2 = this->transformPoint(triangle.points[2]);
-        glm::vec3 normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
-        glm::vec3 color = glm::abs(normal);
-
         for (int i = 0; i < 3; i++) {
             /* if (count > 40300) {
                 } */
@@ -104,6 +140,29 @@ void Planet::icosahedron() {
                 this->uniquePoints.insert(pointKey);
                 this->transformedPoints[pointKey] = this->transformPoint(triangle.points[i]);
             }
+            /* glm::vec3 point = this->transformedPoints[pointKey];
+            this->indices.push_back(this->vertices.size());
+            this->vertices.push_back({point, color}); */
+            //printf("%i\n", points[i]);
+        }
+
+        glm::vec3 v0 = this->transformedPoints[triangle.points[0]];
+        glm::vec3 v1 = this->transformedPoints[triangle.points[1]];
+        glm::vec3 v2 = this->transformedPoints[triangle.points[2]];
+        glm::vec3 normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+        //printf("normal: %f, %f, %f\n", normal.x, normal.y, normal.z);
+        glm::vec3 color;
+        if (use_random_colors) {
+            color = glm::vec3(static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX);
+        } else {
+            color = base_color * (normal.y + 1.0f) / 2.0f;//glm::abs(normal);//(normal + glm::vec3(1.0f)) / 2.0f;
+        }
+
+        for (int i = 0; i < 3; i++) {
+            /* if (count > 40300) {
+                } */
+            //printf("point %i: %f, %f, %f\n", i, triangle.points[i].x, triangle.points[i].y, triangle.points[i].z);
+            glm::vec3 pointKey = triangle.points[i];
             glm::vec3 point = this->transformedPoints[pointKey];
             this->indices.push_back(this->vertices.size());
             this->vertices.push_back({point, color});
@@ -118,12 +177,14 @@ void Planet::icosahedron() {
 }
 
 glm::vec3 Planet::transformPoint(glm::vec3 point) {
-    float noiseValue = this->noise.GetNoise(point.x + 10.0f, point.y + 10.0f, point.z + 10.0f);
-    noiseValue = (noiseValue + 1.0f) / 2.0f; // Normalize to [0, 1]
-    noiseValue *= 5.0f; // Scale to [0, 10]
-    //noiseValue /= 2.0f; // Scale to [0, 0.5]
-    //noiseValue = noiseValue * 0.5f + 1.0f;
-    return this->position + glm::normalize(point) * this->size;// + glm::normalize(point) * noiseValue;// * (static_cast<float>(rand()) / RAND_MAX / 2 + 1);
+    if (this->use_noise) {
+        float noiseValue = this->noise.GetNoise(point.x + 10.0f, point.y + 10.0f, point.z + 10.0f);
+        noiseValue = (noiseValue + 1.0f) / 2.0f; // Normalize to [0, 1]
+        noiseValue *= this->noise_strength;
+        //noiseValue = noiseValue * 0.5f + 1.0f;
+        return this->position + glm::normalize(point) * this->size + glm::normalize(point) * noiseValue;// * (static_cast<float>(rand()) / RAND_MAX / 2 + 1);
+    }
+    return this->position + glm::normalize(point) * this->size;
 }
 
 Triangle::Triangle(glm::vec3 point1, glm::vec3 point2, glm::vec3 point3) {
