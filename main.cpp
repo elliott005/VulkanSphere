@@ -42,6 +42,7 @@ int main() {
     //ImGui::StyleColorsLight();
 
     static const char* enumNoiseType[] = { "OpenSimplex2", "OpenSimplex2S", "Cellular", "Perlin", "Value Cubic", "Value" };
+    static const char* enumFractalType[] = { "None", "FBm", "Ridged", "Ping Pong" };
 
     try {
         /* Image img0;
@@ -78,7 +79,7 @@ int main() {
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
-            ImGui::PushFont(defaultFont, 26.0f);
+            ImGui::PushFont(defaultFont, 20.0f);
             ImGui::Begin("planet tool", nullptr, ImGuiWindowFlags_MenuBar);
                 int num_samples = planet.num_samples;
                 if (glfwGetKey(app.window, GLFW_KEY_LEFT) == GLFW_PRESS) {
@@ -108,16 +109,23 @@ int main() {
                 ImGui::SliderFloat("noise frequency", &noise_frequency, 0.01f, 2.0f);
                 float noise_strength = planet.noise_strength;
                 ImGui::SliderFloat("noise strength", &noise_strength, 0.0, 10.0);
+                int noise_seed = planet.noise_seed;
+                ImGui::DragInt("noise seed", &noise_seed);
                 int noise_type_int = (int)planet.noise_type;
                 ImGui::Combo("noise type", &noise_type_int, enumNoiseType, IM_ARRAYSIZE(enumNoiseType));
                 FastNoiseLite::NoiseType noise_type = (FastNoiseLite::NoiseType)noise_type_int;
-                if (noise_strength != planet.noise_strength || noise_type != planet.noise_type || base_color != planet.base_color || num_samples != planet.num_samples || use_noise != planet.use_noise || size != planet.size || noise_frequency != planet.noise_frequency || use_random_colors != planet.use_random_colors) {
+                int noise_fractal_type_int = (int)planet.noise_fractal_type;
+                ImGui::Combo("noise fractal type", &noise_fractal_type_int, enumFractalType, IM_ARRAYSIZE(enumFractalType));
+                FastNoiseLite::FractalType noise_fractal_type = (FastNoiseLite::FractalType)noise_fractal_type_int;
+                if (noise_seed != planet.noise_seed || noise_fractal_type != planet.noise_fractal_type || noise_strength != planet.noise_strength || noise_type != planet.noise_type || base_color != planet.base_color || num_samples != planet.num_samples || use_noise != planet.use_noise || size != planet.size || noise_frequency != planet.noise_frequency || use_random_colors != planet.use_random_colors) {
                     planet.size = size;
                     planet.num_samples = num_samples;
                     planet.base_color = base_color;
                     planet.use_noise = use_noise;
+                    planet.noise_seed = noise_seed;
                     planet.noise_strength = noise_strength;
                     planet.noise_type = noise_type;
+                    planet.noise_fractal_type = noise_fractal_type;
                     planet.noise_frequency = noise_frequency;
                     planet.use_random_colors = use_random_colors;
                     planet.icosahedron();
@@ -127,6 +135,9 @@ int main() {
             ImGui::End();
             ImGui::Begin("stats", nullptr);
                 ImGui::Text("FPS: %i", int(std::round(1.0f / deltaTime)));
+                ImGui::Text("num triangles: %i", planet.num_triangles);
+                ImGui::Text("num vertices: %i", planet.num_vertices);
+                ImGui::Text("num unique points: %i", planet.num_unique_points);
             ImGui::End();
             ImGui::PopFont();
             ImGui::Render();

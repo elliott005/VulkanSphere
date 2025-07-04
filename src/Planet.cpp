@@ -19,10 +19,8 @@ void Planet::icosahedron() {
 
     this->noise.SetNoiseType(this->noise_type);
     this->noise.SetFrequency(this->noise_frequency);
-    this->noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    this->noise.SetSeed(static_cast<unsigned int>(time(nullptr)));
-
-    printf("num samples: %i\n", this->num_samples);
+    this->noise.SetFractalType(this->noise_fractal_type);
+    this->noise.SetSeed(this->noise_seed);//static_cast<unsigned int>(time(nullptr)));
 
     const float t = (1.0f + sqrt(5.0f)) / 2.0f;
 
@@ -126,7 +124,8 @@ void Planet::icosahedron() {
         }
     }
 
-    printf("num triangles: %i\n", triangles.size());
+    this->num_triangles = triangles.size();
+    //printf("num triangles: %i\n", triangles.size());
 
     //int count = 0;
     for (Triangle& triangle : triangles) {
@@ -172,8 +171,10 @@ void Planet::icosahedron() {
     }
 
     //printf("vertices max size: %i\n", this->vertices.max_size());
-    printf("vertices: %i\n", this->vertices.size());
-    printf("unique points: %i\n", this->uniquePoints.size());
+    this->num_vertices = this->vertices.size();
+    this->num_unique_points = this->uniquePoints.size();
+    /* printf("vertices: %i\n", this->vertices.size());
+    printf("unique points: %i\n", this->uniquePoints.size()); */
 }
 
 glm::vec3 Planet::transformPoint(glm::vec3 point) {

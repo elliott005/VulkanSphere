@@ -24,17 +24,23 @@ public:
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-
+    
     std::unordered_set<glm::vec3> uniquePoints;
     std::unordered_map<glm::vec3, glm::vec3> transformedPoints;
     
     int num_samples = 1; // 81608 triangles for 100 samples
     bool use_random_colors = false;
     bool use_noise = true;
+    int noise_seed = 1;
     float noise_frequency = 0.3;
     float noise_strength = 5.0f;
     glm::vec3 base_color{0.0f, 0.5f, 0.9f};
     FastNoiseLite::NoiseType noise_type = FastNoiseLite::NoiseType_OpenSimplex2;
+    FastNoiseLite::FractalType noise_fractal_type = FastNoiseLite::FractalType_FBm;
+    
+    int num_triangles = 0;
+    int num_vertices = 0;
+    int num_unique_points = 0;
 
     void icosahedron();
 private:
