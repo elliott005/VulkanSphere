@@ -44,6 +44,7 @@
 
 const uint32_t WIDTH = 1800;
 const uint32_t HEIGHT = 1300;
+const int BUFFER_SIZE = 1000000 * 3;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -207,7 +208,7 @@ public:
             memcpy(data, vertices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
-        VkDeviceSize bufferBiggerSize = sizeof(vertices[0]) * 500000 * 3;
+        VkDeviceSize bufferBiggerSize = sizeof(vertices[0]) * BUFFER_SIZE;
         createBuffer(bufferBiggerSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 
         copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
@@ -228,7 +229,7 @@ public:
             memcpy(data, indices.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
-        VkDeviceSize bufferBiggerSize = sizeof(indices[0]) * 500000 * 3;
+        VkDeviceSize bufferBiggerSize = sizeof(indices[0]) * BUFFER_SIZE;
         createBuffer(bufferBiggerSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
 
         copyBuffer(stagingBuffer, indexBuffer, bufferSize);

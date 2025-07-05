@@ -136,7 +136,7 @@ void Planet::icosahedron() {
     }
 
     for (int i = 0; i < this->numCraters; i++) {
-        glm::vec3 pos = glm::vec3(static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX);
+        glm::vec3 pos = glm::vec3(static_cast<float>(rand()) / RAND_MAX - 0.5f, static_cast<float>(rand()) / RAND_MAX - 0.5f, static_cast<float>(rand()) / RAND_MAX - 0.5f);
         pos = glm::normalize(pos);
 
         this->craters.push_back({pos, this->craterMinSize + (static_cast<float>(rand()) / RAND_MAX * (craterMaxSize - craterMinSize))});
@@ -215,7 +215,7 @@ glm::vec3 Planet::transformPoint(glm::vec3 point) {
             craterHeight += craterShape(x) * this->craters[i].radius;
     }
     //printf("%f\n", craterHeight);
-    height += craterHeight;
+    height += std::min(std::max(craterHeight, -this->size / 2), this->size / 2);
     return this->position + normalizedPoint * this->size + normalizedPoint * height;
 }
 
@@ -225,7 +225,8 @@ float Planet::cavityShape(float x) {
 
 float Planet::rimShape(float x) {
     x = std::abs(x) + this->craterDepth - this->rimWidth;
-    return this->rimSteepness * x * x;
+    float y = this->rimSteepness * x * x;
+    return y;
 }
 
 float Planet::floorShape(float x) {
@@ -233,6 +234,9 @@ float Planet::floorShape(float x) {
 }
 
 float Planet::craterShape(float x) {
+    if (std::abs(x) > this->rimWidth - this->craterDepth) {
+        return 0.0f;
+    }
     return -smoothMinFunc(-smoothMinFunc(this->cavityShape(x), this->rimShape(x), this->smoothMin), -this->floorShape(x), this->smoothMax);
 }
 

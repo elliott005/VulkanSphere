@@ -100,7 +100,7 @@ int main() {
                 bool use_random_colors = planet.use_random_colors;
                 glm::vec3 base_color = planet.base_color;
                 if (ImGui::CollapsingHeader("main")) {
-                    ImGui::SliderInt("num samples", &num_samples, 0, 100);
+                    ImGui::SliderInt("num samples", &num_samples, 0, 150);
                     ImGui::SliderFloat("size", &size, 1.0f, 20.0f);
                     ImGui::Checkbox("use random colors", &use_random_colors);
                     ImGui::ColorEdit3("base color", &base_color.x);
@@ -134,11 +134,11 @@ int main() {
                     ImGui::SliderFloat("crater min size", &craterMinSize, 0.001f, 1.0f);
                     ImGui::SliderFloat("crater max size", &craterMaxSize, 0.001f, 1.0f);
                     ImGui::SliderFloat("rim width", &rimWidth, 0.0f, 2.0f);
-                    ImGui::SliderFloat("rim steepness", &rimSteepness, 0.0f, 2.0f);
+                    ImGui::SliderFloat("rim steepness", &rimSteepness, 0.0f, 1.0f);
                     ImGui::SliderFloat("floor height", &floorHeight, -10.0f, 10.0f);
                     ImGui::SliderFloat("depth", &craterDepth, -10.0f, 10.0f);
-                    ImGui::SliderFloat("smooth min", &smoothMin, 0.0f, 5.0f);
-                    ImGui::SliderFloat("smooth max", &smoothMax, 0.0f, 5.0f);
+                    ImGui::SliderFloat("smooth min", &smoothMin, 0.0f, 2.0f);
+                    ImGui::SliderFloat("smooth max", &smoothMax, 0.0f, 2.0f);
                 }
 
                 FastNoiseLite::NoiseType noise_type = (FastNoiseLite::NoiseType)noise_type_int;
