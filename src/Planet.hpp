@@ -14,6 +14,11 @@ public:
 };
 bool operator==(const Triangle& triangle1, const Triangle& triangle2);
 
+struct Crater {
+    glm::vec3 centre;
+    float radius;
+};
+
 class Planet {
 public:
     Planet(glm::vec3 pos, float size);
@@ -28,9 +33,9 @@ public:
     std::unordered_set<glm::vec3> uniquePoints;
     std::unordered_map<glm::vec3, glm::vec3> transformedPoints;
     
-    int num_samples = 1; // 81608 triangles for 100 samples
+    int num_samples = 100; // 81608 triangles for 100 samples
     bool use_random_colors = false;
-    bool use_noise = true;
+    bool use_noise = false;
     int noise_seed = 1;
     float noise_frequency = 0.3;
     float noise_strength = 5.0f;
@@ -42,13 +47,28 @@ public:
     int num_vertices = 0;
     int num_unique_points = 0;
 
+    std::vector<Crater> craters;
+    int numCraters = 1;
+    float rimWidth = 0.0f;
+    float rimSteepness = 0.0f;
+    float floorHeight = -10.0f;
+    float craterDepth = -5;
+    float smoothMin = 0.0f;
+    float smoothMax = 0.0f;
+    float craterMinSize = 0.05f;
+    float craterMaxSize = 0.2f;
+    float cavityShape(float x);
+    float rimShape(float x);
+    float floorShape(float x);
+    float craterShape(float x);
+
     void icosahedron();
 private:
     FastNoiseLite noise;
-
-
 
     glm::vec3 transformPoint(glm::vec3 point);
 };
 
 int sign(float value);
+float smoothMinFunc(float a, float b, float k);
+float clamp01(float a);

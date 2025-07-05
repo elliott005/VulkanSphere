@@ -5,6 +5,11 @@ Planet::Planet(glm::vec3 pos, float size) {
     this->size = size;
     
     this->icosahedron();
+
+    /* printf("%f\n", smoothMinFunc(5, 10, 0.001));
+    for (int i = 1; i < 10; i++) {
+        printf("%f\n", craterShape(float(i) / 10.0f));
+    } */
 }
 
 Planet::~Planet() {
@@ -16,6 +21,7 @@ void Planet::icosahedron() {
     this->vertices.clear();
     this->uniquePoints.clear();
     this->transformedPoints.clear();
+    this->craters.clear();
 
     this->noise.SetNoiseType(this->noise_type);
     this->noise.SetFrequency(this->noise_frequency);
@@ -124,6 +130,18 @@ void Planet::icosahedron() {
         }
     }
 
+    if (craterMaxSize <= craterMinSize) {
+        printf("crater min size is superior to crater max size!\n");
+        this->numCraters = 0;
+    }
+
+    for (int i = 0; i < this->numCraters; i++) {
+        glm::vec3 pos = glm::vec3(static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX);
+        pos = glm::normalize(pos);
+
+        this->craters.push_back({pos, this->craterMinSize + (static_cast<float>(rand()) / RAND_MAX * (craterMaxSize - craterMinSize))});
+    }
+
     this->num_triangles = triangles.size();
     //printf("num triangles: %i\n", triangles.size());
 
@@ -178,14 +196,44 @@ void Planet::icosahedron() {
 }
 
 glm::vec3 Planet::transformPoint(glm::vec3 point) {
+    float height = 0.0;
+    glm::vec3 normalizedPoint = glm::normalize(point);
     if (this->use_noise) {
         float noiseValue = this->noise.GetNoise(point.x + 10.0f, point.y + 10.0f, point.z + 10.0f);
         noiseValue = (noiseValue + 1.0f) / 2.0f; // Normalize to [0, 1]
         noiseValue *= this->noise_strength;
         //noiseValue = noiseValue * 0.5f + 1.0f;
-        return this->position + glm::normalize(point) * this->size + glm::normalize(point) * noiseValue;// * (static_cast<float>(rand()) / RAND_MAX / 2 + 1);
+        height += noiseValue;// * (static_cast<float>(rand()) / RAND_MAX / 2 + 1);
     }
-    return this->position + glm::normalize(point) * this->size;
+    float craterHeight = 0;
+    for (int i = 0; i < this->numCraters; i++) {
+        /* printf("crater center: %f, %f, %f, %f\n", this->craters[i].centre.x, this->craters[i].centre.y, this->craters[i].centre.z, this->craters[i].radius);
+        printf("point: %f, %f, %f\n", point.x, point.y, point.z); */
+        float x = glm::length(normalizedPoint - this->craters[i].centre) / this->craters[i].radius;
+        //printf("%f, %f\n", x, craterShape(x));
+        //if (x < 2.0f)
+            craterHeight += craterShape(x) * this->craters[i].radius;
+    }
+    //printf("%f\n", craterHeight);
+    height += craterHeight;
+    return this->position + normalizedPoint * this->size + normalizedPoint * height;
+}
+
+float Planet::cavityShape(float x) {
+    return x * x + this->craterDepth;
+}
+
+float Planet::rimShape(float x) {
+    x = std::abs(x) + this->craterDepth - this->rimWidth;
+    return this->rimSteepness * x * x;
+}
+
+float Planet::floorShape(float x) {
+    return this->floorHeight;
+}
+
+float Planet::craterShape(float x) {
+    return -smoothMinFunc(-smoothMinFunc(this->cavityShape(x), this->rimShape(x), this->smoothMin), -this->floorShape(x), this->smoothMax);
 }
 
 Triangle::Triangle(glm::vec3 point1, glm::vec3 point2, glm::vec3 point3) {
@@ -200,4 +248,19 @@ bool operator==(const Triangle& triangle1, const Triangle& triangle2) {
 
 int sign(float value) {
     return (value > 0) - (value < 0);
+}
+
+float smoothMinFunc(float a, float b, float k) {
+    if (a < b) {
+        float c = a;
+        a = b;
+        b = c;
+    }
+
+    float h = clamp01((b - a + k) / 2 * k);
+    return a * h + b * (1 - h) - k * h * (1 - h);
+}
+
+float clamp01(float a) {
+    return std::min(std::max(a, 0.0f), 1.0f);
 }

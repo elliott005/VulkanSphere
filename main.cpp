@@ -66,7 +66,7 @@ int main() {
         
         
         while (!glfwWindowShouldClose(app.window)) {
-            if (glfwGetKey(app.window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            if (glfwGetKey(app.window, GLFW_KEY_ESCAPE) == GLFW_PRESS || glfwGetMouseButton(app.window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) {
                 glfwSetWindowShouldClose(app.window, true);
 		    }
             
@@ -80,7 +80,7 @@ int main() {
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
             ImGui::PushFont(defaultFont, 20.0f);
-            ImGui::Begin("planet tool", nullptr, ImGuiWindowFlags_MenuBar);
+            ImGui::Begin("planet tool", nullptr);
                 int num_samples = planet.num_samples;
                 if (glfwGetKey(app.window, GLFW_KEY_LEFT) == GLFW_PRESS) {
                     if (!leftPressed)
@@ -96,38 +96,75 @@ int main() {
                 } else {
                     rightPressed = false;
                 }
-                ImGui::SliderInt("num samples", &num_samples, 0, 100);
                 float size = planet.size;
-                ImGui::SliderFloat("size", &size, 1.0f, 20.0f);
                 bool use_random_colors = planet.use_random_colors;
-                ImGui::Checkbox("use random colors", &use_random_colors);
                 glm::vec3 base_color = planet.base_color;
-                ImGui::ColorEdit3("base color", &base_color.x);
+                if (ImGui::CollapsingHeader("main")) {
+                    ImGui::SliderInt("num samples", &num_samples, 0, 100);
+                    ImGui::SliderFloat("size", &size, 1.0f, 20.0f);
+                    ImGui::Checkbox("use random colors", &use_random_colors);
+                    ImGui::ColorEdit3("base color", &base_color.x);
+                }
                 bool use_noise = planet.use_noise;
-                ImGui::Checkbox("use noise", &use_noise);
                 float noise_frequency = planet.noise_frequency;
-                ImGui::SliderFloat("noise frequency", &noise_frequency, 0.01f, 2.0f);
                 float noise_strength = planet.noise_strength;
-                ImGui::SliderFloat("noise strength", &noise_strength, 0.0, 10.0);
                 int noise_seed = planet.noise_seed;
-                ImGui::DragInt("noise seed", &noise_seed);
                 int noise_type_int = (int)planet.noise_type;
-                ImGui::Combo("noise type", &noise_type_int, enumNoiseType, IM_ARRAYSIZE(enumNoiseType));
-                FastNoiseLite::NoiseType noise_type = (FastNoiseLite::NoiseType)noise_type_int;
                 int noise_fractal_type_int = (int)planet.noise_fractal_type;
-                ImGui::Combo("noise fractal type", &noise_fractal_type_int, enumFractalType, IM_ARRAYSIZE(enumFractalType));
+                if (ImGui::CollapsingHeader("noise")) {
+                    ImGui::Checkbox("use noise", &use_noise);
+                    ImGui::SliderFloat("noise frequency", &noise_frequency, 0.01f, 2.0f);
+                    ImGui::SliderFloat("noise strength", &noise_strength, 0.0, 10.0);
+                    ImGui::DragInt("noise seed", &noise_seed);
+                    ImGui::Combo("noise type", &noise_type_int, enumNoiseType, IM_ARRAYSIZE(enumNoiseType));
+                    ImGui::Combo("noise fractal type", &noise_fractal_type_int, enumFractalType, IM_ARRAYSIZE(enumFractalType));
+                }
+
+                int numCraters = planet.numCraters;
+                float rimWidth = planet.rimWidth;
+                float rimSteepness = planet.rimSteepness;
+                float floorHeight = planet.floorHeight;
+                float smoothMin = planet.smoothMin;
+                float smoothMax = planet.smoothMax;
+                float craterMinSize = planet.craterMinSize;
+                float craterMaxSize = planet.craterMaxSize;
+                float craterDepth = planet.craterDepth;
+                if (ImGui::CollapsingHeader("craters")) {
+                    ImGui::SliderInt("num craters", &numCraters, 0, 100);
+                    ImGui::SliderFloat("crater min size", &craterMinSize, 0.001f, 1.0f);
+                    ImGui::SliderFloat("crater max size", &craterMaxSize, 0.001f, 1.0f);
+                    ImGui::SliderFloat("rim width", &rimWidth, 0.0f, 2.0f);
+                    ImGui::SliderFloat("rim steepness", &rimSteepness, 0.0f, 2.0f);
+                    ImGui::SliderFloat("floor height", &floorHeight, -10.0f, 10.0f);
+                    ImGui::SliderFloat("depth", &craterDepth, -10.0f, 10.0f);
+                    ImGui::SliderFloat("smooth min", &smoothMin, 0.0f, 5.0f);
+                    ImGui::SliderFloat("smooth max", &smoothMax, 0.0f, 5.0f);
+                }
+
+                FastNoiseLite::NoiseType noise_type = (FastNoiseLite::NoiseType)noise_type_int;
                 FastNoiseLite::FractalType noise_fractal_type = (FastNoiseLite::FractalType)noise_fractal_type_int;
-                if (noise_seed != planet.noise_seed || noise_fractal_type != planet.noise_fractal_type || noise_strength != planet.noise_strength || noise_type != planet.noise_type || base_color != planet.base_color || num_samples != planet.num_samples || use_noise != planet.use_noise || size != planet.size || noise_frequency != planet.noise_frequency || use_random_colors != planet.use_random_colors) {
+                if ( base_color != planet.base_color || num_samples != planet.num_samples || use_random_colors != planet.use_random_colors || size != planet.size
+                    || noise_seed != planet.noise_seed || noise_fractal_type != planet.noise_fractal_type || noise_strength != planet.noise_strength || noise_type != planet.noise_type || use_noise != planet.use_noise || noise_frequency != planet.noise_frequency
+                    || numCraters != planet.numCraters || craterDepth != planet.craterDepth || rimWidth != planet.rimWidth || rimSteepness != planet.rimSteepness || floorHeight != planet.floorHeight || smoothMin != planet.smoothMin || smoothMax != planet.smoothMax || craterMinSize != planet.craterMinSize || craterMaxSize != planet.craterMaxSize) {
                     planet.size = size;
                     planet.num_samples = num_samples;
                     planet.base_color = base_color;
+                    planet.use_random_colors = use_random_colors;
                     planet.use_noise = use_noise;
                     planet.noise_seed = noise_seed;
                     planet.noise_strength = noise_strength;
                     planet.noise_type = noise_type;
                     planet.noise_fractal_type = noise_fractal_type;
                     planet.noise_frequency = noise_frequency;
-                    planet.use_random_colors = use_random_colors;
+                    planet.numCraters = numCraters;
+                    planet.rimWidth = rimWidth;
+                    planet.rimSteepness = rimSteepness;
+                    planet.floorHeight = floorHeight;
+                    planet.craterDepth = craterDepth;
+                    planet.smoothMin = smoothMin;
+                    planet.smoothMax = smoothMax;
+                    planet.craterMinSize = craterMinSize;
+                    planet.craterMaxSize = craterMaxSize;
                     planet.icosahedron();
                     app.updateVertexBuffer(vertexBuffer, planet.vertices);
                     app.updateIndexBuffer(indexBuffer, planet.indices);
