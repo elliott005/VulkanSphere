@@ -27,6 +27,7 @@ int main() {
     Planet planet(glm::vec3(0.0f, 0.0, -10.0), 5.0f);
     float planetEnd = static_cast<float>(glfwGetTime());
     printf("planet startup time: %f\n", planetEnd - planetStart);
+    // 0.3 for 100 samples, 0.7 for 150 (1 crater)
 
     std::vector<Image*> images;
 
@@ -165,7 +166,10 @@ int main() {
                     planet.smoothMax = smoothMax;
                     planet.craterMinSize = craterMinSize;
                     planet.craterMaxSize = craterMaxSize;
+                    float planetStart = static_cast<float>(glfwGetTime());
                     planet.icosahedron();
+                    float planetEnd = static_cast<float>(glfwGetTime());
+                    printf("planet startup time: %f\n", planetEnd - planetStart);
                     app.updateVertexBuffer(vertexBuffer, planet.vertices);
                     app.updateIndexBuffer(indexBuffer, planet.indices);
                 }
@@ -174,7 +178,6 @@ int main() {
                 ImGui::Text("FPS: %i", int(std::round(1.0f / deltaTime)));
                 ImGui::Text("num triangles: %i", planet.num_triangles);
                 ImGui::Text("num vertices: %i", planet.num_vertices);
-                ImGui::Text("num unique points: %i", planet.num_unique_points);
             ImGui::End();
             ImGui::PopFont();
             ImGui::Render();

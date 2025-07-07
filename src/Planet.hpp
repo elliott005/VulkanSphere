@@ -3,12 +3,13 @@
 #include "Application.hpp"
 #include "FastNoiseLite.h"
 #include <random>
-#include <unordered_set>
-#include <unordered_map>
 #include <time.h>
+#include <thread>
+#include <mutex>
 
 class Triangle {
 public:
+    Triangle();
     Triangle(glm::vec3 point1, glm::vec3 point2, glm::vec3 point3);
     glm::vec3 points[3];
 };
@@ -30,9 +31,6 @@ public:
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
     
-    std::unordered_set<glm::vec3> uniquePoints;
-    std::unordered_map<glm::vec3, glm::vec3> transformedPoints;
-    
     int num_samples = 100; // 81608 triangles for 100 samples
     bool use_random_colors = false;
     bool use_noise = false;
@@ -45,7 +43,6 @@ public:
     
     int num_triangles = 0;
     int num_vertices = 0;
-    int num_unique_points = 0;
 
     std::vector<Crater> craters;
     int numCraters = 1;
@@ -63,11 +60,18 @@ public:
     float craterShape(float x);
 
     void icosahedron();
+
+    void proccessVertices(int startIdx, Triangle* triangles);
 private:
     FastNoiseLite noise;
 
     glm::vec3 transformPoint(glm::vec3 point);
+
+    static const int numThreads = 4;
+    std::thread threads[numThreads];
 };
+
+void proccessVerticesStatic(Planet* thisPrime, int startIdx, Triangle* triangles);
 
 int sign(float value);
 float smoothMinFunc(float a, float b, float k);

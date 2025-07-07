@@ -19,14 +19,14 @@ Planet::~Planet() {
 void Planet::icosahedron() {
     this->indices.clear();
     this->vertices.clear();
-    this->uniquePoints.clear();
-    this->transformedPoints.clear();
     this->craters.clear();
 
     this->noise.SetNoiseType(this->noise_type);
     this->noise.SetFrequency(this->noise_frequency);
     this->noise.SetFractalType(this->noise_fractal_type);
     this->noise.SetSeed(this->noise_seed);//static_cast<unsigned int>(time(nullptr)));
+
+    srand(this->noise_seed);
 
     const float t = (1.0f + sqrt(5.0f)) / 2.0f;
 
@@ -47,7 +47,8 @@ void Planet::icosahedron() {
     };
 
     // 20 triangles, each referencing the above vertices by index
-    std::vector<Triangle> startTriangles = {
+    const int numStartTriangles = 20;
+    Triangle startTriangles[numStartTriangles] = {
         {verts[0], verts[11], verts[5]},
         {verts[0], verts[5], verts[1]},
         {verts[0], verts[1], verts[7]},
@@ -82,7 +83,10 @@ void Planet::icosahedron() {
         {glm::vec3(s, 0, s),   glm::vec3(s, 0, -s),  glm::vec3(0, -s, 0)}, // bottom right
     }; */
 
-    std::vector<Triangle> triangles;
+    //std::vector<Triangle> triangles;
+    int trianglesSize = numStartTriangles * (num_samples + 1) * (num_samples + 1);
+    Triangle* triangles = new Triangle[trianglesSize];
+    int triangleIdx = 0;
     for (Triangle& triangle : startTriangles) {
 
         std::vector<glm::vec3> triEdgePoints((num_samples + 2) * 2);
@@ -118,14 +122,15 @@ void Planet::icosahedron() {
                     glm::vec3 v4 = triPoints[((i + 1) * (i + 2)) / 2 + j / 2];
                     glm::vec3 v5 = triPoints[((i + 1) * (i + 2)) / 2 + j / 2 + 1];
     
-                    triangles.push_back({v3, v4, v5});
+                    triangles[triangleIdx] = {v3, v4, v5};
                 } else {
                     glm::vec3 v3 = triPoints[(i * (i + 1)) / 2 + j / 2];
                     glm::vec3 v4 = triPoints[((i + 1) * (i + 2)) / 2 + j / 2 + 1];
                     glm::vec3 v5 = triPoints[(i * (i + 1)) / 2 + j / 2 + 1];
     
-                    triangles.push_back({v3, v4, v5});
+                    triangles[triangleIdx] = {v3, v4, v5};
                 }
+                triangleIdx++;
             }
         }
     }
@@ -142,31 +147,36 @@ void Planet::icosahedron() {
         this->craters.push_back({pos, this->craterMinSize + (static_cast<float>(rand()) / RAND_MAX * (craterMaxSize - craterMinSize))});
     }
 
-    this->num_triangles = triangles.size();
+    this->num_triangles = trianglesSize;
     //printf("num triangles: %i\n", triangles.size());
 
-    //int count = 0;
-    for (Triangle& triangle : triangles) {
-        for (int i = 0; i < 3; i++) {
-            /* if (count > 40300) {
-                } */
-            //printf("point %i: %f, %f, %f\n", i, triangle.points[i].x, triangle.points[i].y, triangle.points[i].z);
-            glm::vec3 pointKey = triangle.points[i];
-            auto it = this->uniquePoints.find(pointKey);
-            if (it == this->uniquePoints.end()) {
-                this->uniquePoints.insert(pointKey);
-                this->transformedPoints[pointKey] = this->transformPoint(triangle.points[i]);
-            }
-            /* glm::vec3 point = this->transformedPoints[pointKey];
-            this->indices.push_back(this->vertices.size());
-            this->vertices.push_back({point, color}); */
-            //printf("%i\n", points[i]);
-        }
+    this->vertices.resize(this->num_triangles * 3);
+    this->indices.resize(this->num_triangles * 3);
 
-        glm::vec3 v0 = this->transformedPoints[triangle.points[0]];
-        glm::vec3 v1 = this->transformedPoints[triangle.points[1]];
-        glm::vec3 v2 = this->transformedPoints[triangle.points[2]];
-        glm::vec3 normal = glm::normalize(glm::cross(v1 - v0, v2 - v0));
+    for (int i = 0; i < this->numThreads; i++) {
+        threads[i] = std::thread(&proccessVerticesStatic, this, i, triangles);
+    }
+
+    for (int i = 0; i < this->numThreads; i++) {
+        threads[i].join();
+    }
+
+    delete[] triangles;
+
+    //printf("vertices max size: %i\n", this->vertices.max_size());
+    this->num_vertices = this->vertices.size();
+    /* printf("vertices: %i\n", this->vertices.size());
+    printf("unique points: %i\n", this->uniquePoints.size()); */
+}
+
+void Planet::proccessVertices(int startIdx, Triangle* triangles) {
+    for (int triIdx = std::ceil(float(startIdx) * float(this->num_triangles) / float(this->numThreads)); triIdx < std::ceil(float(startIdx + 1) * float(this->num_triangles) / float(this->numThreads)); triIdx++) {
+        glm::vec3 verts[3] = {
+            this->transformPoint(triangles[triIdx].points[0]),
+            this->transformPoint(triangles[triIdx].points[1]),
+            this->transformPoint(triangles[triIdx].points[2])
+        };
+        glm::vec3 normal = glm::normalize(glm::cross(verts[1] - verts[0], verts[2] - verts[0]));
         //printf("normal: %f, %f, %f\n", normal.x, normal.y, normal.z);
         glm::vec3 color;
         if (use_random_colors) {
@@ -176,23 +186,17 @@ void Planet::icosahedron() {
         }
 
         for (int i = 0; i < 3; i++) {
-            /* if (count > 40300) {
-                } */
             //printf("point %i: %f, %f, %f\n", i, triangle.points[i].x, triangle.points[i].y, triangle.points[i].z);
-            glm::vec3 pointKey = triangle.points[i];
-            glm::vec3 point = this->transformedPoints[pointKey];
-            this->indices.push_back(this->vertices.size());
-            this->vertices.push_back({point, color});
+            int idx = triIdx * 3 + i;
+            this->indices[idx] = triIdx * 3 + i;
+            this->vertices[idx] = {verts[i], color};
             //printf("%i\n", points[i]);
         }
-        //count++;
     }
+}
 
-    //printf("vertices max size: %i\n", this->vertices.max_size());
-    this->num_vertices = this->vertices.size();
-    this->num_unique_points = this->uniquePoints.size();
-    /* printf("vertices: %i\n", this->vertices.size());
-    printf("unique points: %i\n", this->uniquePoints.size()); */
+void proccessVerticesStatic(Planet* thisPrime, int startIdx, Triangle* triangles) {
+    thisPrime->proccessVertices(startIdx, triangles);
 }
 
 glm::vec3 Planet::transformPoint(glm::vec3 point) {
@@ -238,6 +242,10 @@ float Planet::craterShape(float x) {
         return 0.0f;
     }
     return -smoothMinFunc(-smoothMinFunc(this->cavityShape(x), this->rimShape(x), this->smoothMin), -this->floorShape(x), this->smoothMax);
+}
+
+Triangle::Triangle() {
+
 }
 
 Triangle::Triangle(glm::vec3 point1, glm::vec3 point2, glm::vec3 point3) {
