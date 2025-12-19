@@ -144,7 +144,9 @@ void Planet::icosahedron() {
         glm::vec3 pos = glm::vec3(static_cast<float>(rand()) / RAND_MAX - 0.5f, static_cast<float>(rand()) / RAND_MAX - 0.5f, static_cast<float>(rand()) / RAND_MAX - 0.5f);
         pos = glm::normalize(pos);
 
-        this->craters.push_back({pos, this->craterMinSize + (static_cast<float>(rand()) / RAND_MAX * (craterMaxSize - craterMinSize))});
+        float craterSize = this->craterMinSize + (static_cast<float>(rand()) / RAND_MAX * (craterMaxSize - craterMinSize));
+        craterSize = craterSizeFunc(craterSize, this->craterSizeBias);
+        this->craters.push_back({pos, craterSize});
     }
 
     this->num_triangles = trianglesSize;
@@ -216,7 +218,7 @@ glm::vec3 Planet::transformPoint(glm::vec3 point) {
         float x = glm::length(normalizedPoint - this->craters[i].centre) / this->craters[i].radius;
         //printf("%f, %f\n", x, craterShape(x));
         //if (x < 2.0f)
-            craterHeight += craterShape(x) * this->craters[i].radius;
+            craterHeight += craterShape(x) * ((this->craters[i].radius + 1) * (this->craters[i].radius + 1) - 1);
     }
     //printf("%f\n", craterHeight);
     height += std::min(std::max(craterHeight, -this->size / 2), this->size / 2);
@@ -242,6 +244,11 @@ float Planet::craterShape(float x) {
         return 0.0f;
     }
     return -smoothMinFunc(-smoothMinFunc(this->cavityShape(x), this->rimShape(x), this->smoothMin), -this->floorShape(x), this->smoothMax);
+}
+
+float Planet::craterSizeFunc(float x, float bias) {
+    float k = (1 - bias) * (1 - bias) * (1 - bias);
+    return (x * k) / (x * k - x + 1);
 }
 
 Triangle::Triangle() {

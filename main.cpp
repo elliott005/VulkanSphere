@@ -130,10 +130,12 @@ int main() {
                 float craterMinSize = planet.craterMinSize;
                 float craterMaxSize = planet.craterMaxSize;
                 float craterDepth = planet.craterDepth;
+                float craterSizeBias = planet.craterSizeBias;
                 if (ImGui::CollapsingHeader("craters")) {
                     ImGui::SliderInt("num craters", &numCraters, 0, 100);
                     ImGui::SliderFloat("crater min size", &craterMinSize, 0.001f, 1.0f);
                     ImGui::SliderFloat("crater max size", &craterMaxSize, 0.001f, 1.0f);
+                    ImGui::SliderFloat("crater size bias", &craterSizeBias, 0.0f, 1.0f);
                     ImGui::SliderFloat("rim width", &rimWidth, 0.0f, 2.0f);
                     ImGui::SliderFloat("rim steepness", &rimSteepness, 0.0f, 1.0f);
                     ImGui::SliderFloat("floor height", &floorHeight, -10.0f, 10.0f);
@@ -146,7 +148,7 @@ int main() {
                 FastNoiseLite::FractalType noise_fractal_type = (FastNoiseLite::FractalType)noise_fractal_type_int;
                 if ( base_color != planet.base_color || num_samples != planet.num_samples || use_random_colors != planet.use_random_colors || size != planet.size
                     || noise_seed != planet.noise_seed || noise_fractal_type != planet.noise_fractal_type || noise_strength != planet.noise_strength || noise_type != planet.noise_type || use_noise != planet.use_noise || noise_frequency != planet.noise_frequency
-                    || numCraters != planet.numCraters || craterDepth != planet.craterDepth || rimWidth != planet.rimWidth || rimSteepness != planet.rimSteepness || floorHeight != planet.floorHeight || smoothMin != planet.smoothMin || smoothMax != planet.smoothMax || craterMinSize != planet.craterMinSize || craterMaxSize != planet.craterMaxSize) {
+                    || numCraters != planet.numCraters || craterSizeBias != planet.craterSizeBias || craterDepth != planet.craterDepth || rimWidth != planet.rimWidth || rimSteepness != planet.rimSteepness || floorHeight != planet.floorHeight || smoothMin != planet.smoothMin || smoothMax != planet.smoothMax || craterMinSize != planet.craterMinSize || craterMaxSize != planet.craterMaxSize) {
                     planet.size = size;
                     planet.num_samples = num_samples;
                     planet.base_color = base_color;
@@ -166,6 +168,7 @@ int main() {
                     planet.smoothMax = smoothMax;
                     planet.craterMinSize = craterMinSize;
                     planet.craterMaxSize = craterMaxSize;
+                    planet.craterSizeBias = craterSizeBias;
                     float planetStart = static_cast<float>(glfwGetTime());
                     planet.icosahedron();
                     float planetEnd = static_cast<float>(glfwGetTime());

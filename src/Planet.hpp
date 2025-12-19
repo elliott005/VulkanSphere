@@ -54,6 +54,7 @@ public:
     float smoothMax = 0.0f;
     float craterMinSize = 0.05f;
     float craterMaxSize = 0.2f;
+    float craterSizeBias = 0.0f;
     float cavityShape(float x);
     float rimShape(float x);
     float floorShape(float x);
@@ -66,6 +67,8 @@ private:
     FastNoiseLite noise;
 
     glm::vec3 transformPoint(glm::vec3 point);
+
+    float craterSizeFunc(float x, float bias);
 
     static const int numThreads = 4;
     std::thread threads[numThreads];
