@@ -18,42 +18,42 @@ I used glm for math stuff cause I was too lazy to write matrix and vector classe
 ## Images!!!
 Basic example with samples set to 0 to see initial icosahedron
 
-![Icosahedron Image]("readmeimgs/icosahedron.png")
+![Icosahedron Image](readmeimgs/icosahedron.png)
 
 All the settings!
 
-![Settings Image]("readmeimgs/SettingsShow.png")
+![Settings Image](readmeimgs/SettingsShow.png)
 
 When samples are set to 1, so 1 subdivision of the original icosahedron.
 
-![Samples 1]("readmeimgs/Samples1.png")
+![Samples 1](readmeimgs/Samples1.png)
 
 10 samples with random triangle colors for better visualisation
 
-![Samples 10]("readmeimgs/Samples10.png")
+![Samples 10](readmeimgs/Samples10.png)
 
 Lots of samples!
 
-![A lot of samples]("readmeimgs/SamplesALot.png")
+![A lot of samples](readmeimgs/SamplesALot.png)
 
 With noise!!!
 
-![Noise 1]("readmeimgs/noise1.png")
+![Noise 1](readmeimgs/noise1.png)
 
-![Noise 2]("readmeimgs/noise2.png")
+![Noise 2](readmeimgs/noise2.png)
 
 Just to get an idea of the amount of triangles
 
-![Triangles]("readmeimgs/Triangles.png")
+![Triangles](readmeimgs/Triangles.png)
 
 Craters oooohh.
 
-![Craters]("readmeimgs/Crater.png")
+![Craters](readmeimgs/Crater.png)
 
-![Craters]("readmeimgs/Craters.png")
+![Craters](readmeimgs/Craters.png)
 
 Craters + Noise yay.
 
-![Craters Noise]("readmeimgs/CratersNoise.png")
+![Craters Noise](readmeimgs/CratersNoise.png)
 
-![Craters Noise2]("readmeimgs/CratersNoise2.png")
+![Craters Noise2](readmeimgs/CratersNoise2.png)
